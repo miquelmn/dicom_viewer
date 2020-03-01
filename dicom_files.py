@@ -30,3 +30,8 @@ class DicomImage:
 
     def __getitem__(self, item):
         return self.__images.pixel_array[:, :, item]
+
+    def get_header(self):
+        elements = [self.__images.elements()]
+        for e in elements:
+            yield e

@@ -15,6 +15,7 @@
 *.jpx
 *.jpm
 *.mj2
+*.dcm
 
 # JPEG XR
 *.jxr
