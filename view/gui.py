@@ -1,7 +1,7 @@
 from typing import List
 import tkinter as tk
-from PIL import Image, ImageTk
 import numpy as np
+from . import canvasimage
 
 
 class View(tk.Tk):
@@ -9,18 +9,16 @@ class View(tk.Tk):
     def __init__(self, data: List[np.ndarray], title):
         self.__data = data
         self.__title = title
-        self.__canvas = None
-        self.__image_on_canvas = None
+        self.__canvas_image = None
         self.__functions = None
 
         super().__init__()
 
-    def set_functions(self, *args):
-        self.__functions = args
+    def set_functions(self, functions):
+        self.__functions = functions
 
     def set_title(self, titol: str):
         self.__title = titol
-
 
     @property
     def data(self) -> List[np.ndarray]:
@@ -34,6 +32,10 @@ class View(tk.Tk):
     def canvas(self) -> tk.Canvas:
         return self.__canvas
 
+    @property
+    def image(self) -> canvasimage.CanvasImage:
+        return self.__canvas_image
+
     def draw(self):
         """ Draws the GUI.
 
@@ -45,7 +47,10 @@ class View(tk.Tk):
         self.columnconfigure(1, minsize=800, weight=1)
 
         self.__button_bar()
-        self.__draw_img()
+        self.__canvas_image = canvasimage.CanvasImage(parent=self)
+
+        self.image.set_function([self.__functions[2]])
+        self.image.draw()
 
         self.mainloop()
 
@@ -53,33 +58,11 @@ class View(tk.Tk):
         fr_buttons = tk.Frame(self, relief=tk.RAISED, bd=2)
 
         functions = self.__functions
+
         btn_open = tk.Button(fr_buttons, text="Obrir", command=functions[0])
-        btn_save = tk.Button(fr_buttons, text="Save As...", command=functions[1])
+        btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions[1])
 
         btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        btn_save.grid(row=1, column=0, sticky="ew", padx=5)
+        btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
 
         fr_buttons.grid(row=0, column=0, sticky="ns")
-
-    def __draw_img(self, img_raw=None):
-        if img_raw is None:
-            img_raw = np.ones((100, 100)) * 150
-        img = View.__numpy_2_tkinter(img_raw)
-
-        canvas = tk.Canvas(self, width=300, height=300)
-        canvas.grid(row=0, column=1, sticky="nsew")
-
-        self.__image_on_canvas = canvas.create_image(20, 20, anchor="nw", image=img)
-        self.__canvas = canvas
-
-    def show_image(self, img_raw: np.ndarray):
-        assert self.__image_on_canvas is not None
-
-        img = View.__numpy_2_tkinter(img_raw)
-        self.canvas.itemconfig(self.__image_on_canvas, image=img)
-
-    @staticmethod
-    def __numpy_2_tkinter(img_raw: np.ndarray):
-        img = ImageTk.PhotoImage(image=Image.fromarray(img_raw))
-
-        return img
