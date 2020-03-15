@@ -31,6 +31,7 @@ class Table(Frame):
 
 
 def make_table(title: str, dades):
-    root = Tk(title)
+    root = Tk()
+    root.title(title)
     Table(root, dades)
     root.mainloop()
