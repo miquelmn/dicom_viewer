@@ -11,15 +11,15 @@ class CanvasImage(view_component.VComponent):
         self.__image_on_canvas = None
         self.__parent = parent
         self.__image = None
-        self.__scale = None
+        self.__scale_depth = None
         self.__n_images = 1
 
         super().__init__()
 
     def set_n_images(self, value: int):
         self.__n_images = value
-        if self.__scale is not None:
-            self.__scale.configure(to=value)
+        if self.__scale_depth is not None:
+            self.__scale_depth.configure(to=value)
 
     def draw(self):
         self.__draw_img()
@@ -33,11 +33,14 @@ class CanvasImage(view_component.VComponent):
         canvas.grid(row=0, column=1, sticky="nsew")
         image_on_canvas = canvas.create_image(20, 20, anchor="nw", image=img)
 
-        scale = tk.Scale(self.__parent, from_=0, to=self.__n_images, orient=tk.HORIZONTAL,
-                         command=self.functions[0])
-        scale.grid(row=1, column=1, sticky="nsew")
+        scale_depth = tk.Scale(self.__parent, from_=0, to=self.__n_images, orient=tk.HORIZONTAL,
+                               command=self.functions[0])
+        scale_depth.grid(row=1, column=1, sticky="nsew")
 
-        self.__scale = scale
+        scale_zoom = tk.Scale(self.__parent, from_=0, to=100)
+        scale_zoom.grid(row=0, column=2, sticky="nsew")
+
+        self.__scale_depth = scale_depth
         self.__image_raw = img_raw
         self.__image = img
         self.__image_on_canvas = image_on_canvas
@@ -52,7 +55,7 @@ class CanvasImage(view_component.VComponent):
         self.__image = img
 
     def get_image_depth(self) -> int:
-        return int(self.__scale.get())
+        return int(self.__scale_depth.get())
 
     @staticmethod
     def __numpy_2_tkinter(img_raw: np.ndarray):
