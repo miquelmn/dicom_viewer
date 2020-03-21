@@ -10,5 +10,6 @@ class VComponent(abc.ABC):
     def draw(self):
         pass
 
-    def set_function(self, functions):
-        self.functions = functions
+    @abc.abstractmethod
+    def set_function(self, **kwargs):
+        pass

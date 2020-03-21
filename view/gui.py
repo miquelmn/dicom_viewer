@@ -14,8 +14,8 @@ class View(tk.Tk):
 
         super().__init__()
 
-    def set_functions(self, functions):
-        self.__functions = functions
+    def set_functions(self, **kwargs):
+        self.__functions = kwargs
 
     def set_title(self, titol: str):
         self.__title = titol
@@ -49,7 +49,9 @@ class View(tk.Tk):
         self.__button_bar()
         self.__canvas_image = canvasimage.CanvasImage(parent=self)
 
-        self.image.set_function([self.__functions[2], self.__functions[3]])
+        self.image.set_function(depth_function=self.__functions["depth_c"],
+                                zoom_function=self.__functions["zoom_c"],
+                                movements_function=self.__functions["movement"])
         self.image.draw()
 
         self.mainloop()
@@ -59,8 +61,8 @@ class View(tk.Tk):
 
         functions = self.__functions
 
-        btn_open = tk.Button(fr_buttons, text="Obrir", command=functions[0])
-        btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions[1])
+        btn_open = tk.Button(fr_buttons, text="Obrir", command=functions["file_o"])
+        btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions["header_s"])
 
         btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
