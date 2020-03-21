@@ -49,7 +49,7 @@ class View(tk.Tk):
         self.__button_bar()
         self.__canvas_image = canvasimage.CanvasImage(parent=self)
 
-        self.image.set_function([self.__functions[2]])
+        self.image.set_function([self.__functions[2], self.__functions[3]])
         self.image.draw()
 
         self.mainloop()

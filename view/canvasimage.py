@@ -37,7 +37,7 @@ class CanvasImage(view_component.VComponent):
                                command=self.functions[0])
         scale_depth.grid(row=1, column=1, sticky="nsew")
 
-        scale_zoom = tk.Scale(self.__parent, from_=0, to=100)
+        scale_zoom = tk.Scale(self.__parent, from_=1, to=100, command=self.functions[1])
         scale_zoom.grid(row=0, column=2, sticky="nsew")
 
         self.__scale_depth = scale_depth
