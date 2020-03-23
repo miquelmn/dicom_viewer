@@ -1,8 +1,6 @@
 from view import view_component
 import numpy as np
 import tkinter as tk
-from PIL import Image, ImageTk
-from typing import List
 
 
 class CanvasImage(view_component.VComponent):
@@ -20,7 +18,7 @@ class CanvasImage(view_component.VComponent):
         self.__f_zoom = None
         self.__f_movements = None
 
-        super().__init__()
+        super().__init__(0, 1)
 
     def set_function(self, depth_function, zoom_function, movements_function):
         self.__f_depth = depth_function
@@ -38,12 +36,12 @@ class CanvasImage(view_component.VComponent):
     def __draw_img(self, img_raw=None):
         if img_raw is None:
             img_raw = np.ones((500, 500)) * 255
-        img = CanvasImage.__numpy_2_tkinter(img_raw)
+        img = CanvasImage.numpy_2_tkinter(img_raw)
 
         canvas = tk.Canvas(self.__parent, width=300, height=300)
         canvas.bind("<Button-1>", self.__f_movements[0])
         canvas.bind("<ButtonRelease-1>", self.__f_movements[1])
-        canvas.grid(row=0, column=1, sticky="nsew")
+        canvas.grid(row=self.row, column=self.column, sticky="nsew")
         image_on_canvas = canvas.create_image(20, 20, anchor="nw", image=img)
 
         scale_depth = tk.Scale(self.__parent, from_=0, to=self.__n_images, orient=tk.HORIZONTAL,
@@ -61,26 +59,13 @@ class CanvasImage(view_component.VComponent):
 
     coord = None
 
-    def reset_t(self, event):
-        print(self.coord)
-        print(event.x, event.y)
-
-    def prova(self, event):
-        self.coord = event.x, event.y
-
     def show_image(self, img_raw: np.ndarray):
         assert self.__image_on_canvas is not None
 
-        img = CanvasImage.__numpy_2_tkinter(img_raw)
+        img = CanvasImage.numpy_2_tkinter(img_raw)
         self.__canvas.itemconfig(self.__image_on_canvas, image=img)
 
         self.__image = img
 
     def get_image_depth(self) -> int:
         return int(self.__scale_depth.get())
-
-    @staticmethod
-    def __numpy_2_tkinter(img_raw: np.ndarray):
-        img = ImageTk.PhotoImage(image=Image.fromarray(img_raw))
-
-        return img
