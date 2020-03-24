@@ -5,30 +5,22 @@ import tkinter as tk
 
 class CanvasImage(view_component.VComponent):
 
-    def __init__(self, parent):
+    def __init__(self, parent, **kwargs):
         self.__canvas = None
         self.__image_on_canvas = None
         self.__parent = parent
         self.__image = None
         self.__scale_depth = None
-        self.__n_images = 1
 
         # Functions
         self.__f_depth = None
         self.__f_zoom = None
         self.__f_movements = None
 
-        super().__init__(0, 1)
+        super().__init__(**kwargs)
 
-    def set_function(self, depth_function, zoom_function, movements_function):
-        self.__f_depth = depth_function
-        self.__f_zoom = zoom_function
+    def set_function(self, movements_function):
         self.__f_movements = movements_function
-
-    def set_n_images(self, value: int):
-        self.__n_images = value
-        if self.__scale_depth is not None:
-            self.__scale_depth.configure(to=value)
 
     def draw(self):
         self.__draw_img()
@@ -38,20 +30,15 @@ class CanvasImage(view_component.VComponent):
             img_raw = np.ones((500, 500)) * 255
         img = CanvasImage.numpy_2_tkinter(img_raw)
 
-        canvas = tk.Canvas(self.__parent, width=300, height=300)
+        canvas = tk.Canvas(self.__parent, width=600, height=300)
         canvas.bind("<Button-1>", self.__f_movements[0])
         canvas.bind("<ButtonRelease-1>", self.__f_movements[1])
         canvas.grid(row=self.row, column=self.column, sticky="nsew")
         image_on_canvas = canvas.create_image(20, 20, anchor="nw", image=img)
 
-        scale_depth = tk.Scale(self.__parent, from_=0, to=self.__n_images, orient=tk.HORIZONTAL,
-                               command=self.__f_depth)
-        scale_depth.grid(row=1, column=1, sticky="nsew")
 
-        scale_zoom = tk.Scale(self.__parent, from_=1, to=100, command=self.__f_zoom)
-        scale_zoom.grid(row=0, column=2, sticky="nsew")
 
-        self.__scale_depth = scale_depth
+        # self.__scale_depth = scale_depth
         self.__image_raw = img_raw
         self.__image = img
         self.__image_on_canvas = image_on_canvas
