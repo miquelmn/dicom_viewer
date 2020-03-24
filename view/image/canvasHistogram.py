@@ -129,7 +129,7 @@ class CanvasHistogram(view_component.VComponent):
             direction = direction * -1
 
         if ((not back) and (pos_line[0] + velocity) < maximum) or (
-                back and (pos_line[0] + velocity) > minimum):
+                back and (pos_line[0] + -1* velocity) > minimum):
             self.__canvas.move(line, direction * velocity, 0)
 
     def get_bbox(self, item=None):
