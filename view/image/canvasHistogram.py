@@ -17,12 +17,15 @@ class CanvasHistogram(view_component.VComponent):
         self.__min_line = None
         self.__max_line = None
 
+        self.__f_histogram = None
         self.__size_img = [1000, 600]
+        self.__f_release_histogram = None
 
         super().__init__(**kwargs)
 
-    def set_function(self, **kwargs):
-        pass
+    def set_function(self, histogram, release, **kwargs):
+        self.__f_histogram = histogram
+        self.__f_release_histogram = release
 
     def __get_line(self, idx):
         if idx != 0 and idx != 1:
@@ -44,6 +47,8 @@ class CanvasHistogram(view_component.VComponent):
         canvas = tk.Canvas(self.__parent, width=self.__size_img[0], height=self.__size_img[1])
         canvas.grid(row=self.row, column=self.column, sticky="nsew")
         image_on_canvas = canvas.create_image(20, 100, anchor="nw", image=img)
+        canvas.bind("<B1-Motion>", self.__f_histogram)
+        canvas.bind("<ButtonRelease-1>", self.__f_release_histogram)
 
         self.__image_raw = img_raw
         self.__image = img
@@ -58,8 +63,8 @@ class CanvasHistogram(view_component.VComponent):
         canvas = self.__canvas
         bbox = canvas.bbox(self.__image_on_canvas)
 
-        min_line = canvas.create_line(20, bbox[1] + 5, 20, bbox[3])
-        max_line = canvas.create_line(bbox[2], bbox[1], bbox[2], bbox[3] - 1)
+        min_line = canvas.create_line(bbox[0], bbox[1], bbox[0], bbox[3])
+        max_line = canvas.create_line(bbox[2], bbox[1], bbox[2], bbox[3])
 
         self.__min_line = min_line
         self.__max_line = max_line
@@ -76,6 +81,9 @@ class CanvasHistogram(view_component.VComponent):
 
         img = CanvasHistogram.numpy_2_tkinter(histogram)
         self.__canvas.itemconfig(self.__image_on_canvas, image=img)
+        bbox = self.__canvas.bbox(self.__image_on_canvas)
+
+        self.__canvas.coords(self.__max_line, bbox[2], bbox[1], bbox[2], bbox[3] - 1)
 
         self.__image_raw = histogram
         self.__image = img
@@ -91,24 +99,36 @@ class CanvasHistogram(view_component.VComponent):
 
         """
         for i in range(0, 2):
-            yield self.__get_line(i)
+            line = self.__get_line(i)
+            yield self.__canvas.bbox(line)
 
-    def move_line(self, id_line: int, front: bool, velocity: int):
+    def move_line(self, id_line: int, back: bool, velocity: int):
         """
         Move the line indicated from the parameter.
 
         Args:
             id_line (int): If 0 the line moved is the minimum if it's 1 moves the max line
-            front (bool): If true the line moves to the right else moves to the left.
+            back (bool): If true the line moves to the right else moves to the left.
             velocity (int): Speed of the movement
 
         Returns:
 
         """
         line = self.__get_line(id_line)
+        bbox = self.get_bbox()
+        maximum = bbox[2]
+        minimum = bbox[0]
+        pos_line = self.get_bbox(line)
 
         direction = 1
-        if front:
+        if back:
             direction = direction * -1
 
-        self.__canvas.move(line, direction * velocity, 0)
+        if ((not back) and (pos_line[0] + velocity) < maximum) or (
+                back and (pos_line[0] + velocity) > minimum):
+            self.__canvas.move(line, direction * velocity, 0)
+
+    def get_bbox(self, item=None):
+        if item is None:
+            item = self.__image_on_canvas
+        return self.__canvas.bbox(item)

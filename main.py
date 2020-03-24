@@ -3,7 +3,7 @@ from controller.controller import Controller
 
 
 def main():
-    vw = gui.View(None, "DICOM Reader")
+    vw = gui.View("DICOM Reader")
     contr = Controller(vw)
     contr.start()
 

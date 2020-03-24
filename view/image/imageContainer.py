@@ -1,3 +1,4 @@
+from typing import List
 import tkinter as tk
 from . import canvasHistogram, canvasimage
 import numpy as np
@@ -23,8 +24,9 @@ class ContainerImage(tk.Frame):
         if self.__scale_depth is not None:
             self.__scale_depth.configure(to=value)
 
-    def set_functions(self, movements, depth, zoom):
+    def set_functions(self, movements, depth, zoom, histogram, histogram_release):
         self.__canvas_image.set_function(movements)
+        self.__canvas_histogram.set_function(histogram, histogram_release)
         self.__f_depth = depth
         self.__f_zoom = zoom
 
@@ -43,7 +45,18 @@ class ContainerImage(tk.Frame):
         self.__canvas_image.draw()
         self.__canvas_histogram.draw()
 
-    def update_image(self, img: np.ndarray):
+    def update_image(self, img: np.ndarray, update_histogram=False):
         self.__canvas_image.show_image(img)
-        self.__canvas_histogram.show_image(img)
         self.__scale_zoom.configure(to=100)
+
+        if update_histogram:
+            self.__canvas_histogram.show_image(img)
+
+    def move_histogram_line(self, id_line: int, front: bool, velocity: int):
+        self.__canvas_histogram.move_line(id_line, front, velocity)
+
+    def lines_position(self):
+        return list(self.__canvas_histogram.lines_bb())
+
+    def get_histogram_position(self) -> List[int]:
+        return self.__canvas_histogram.get_bbox()
