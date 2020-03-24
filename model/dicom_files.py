@@ -2,6 +2,7 @@ from typing import List, Union
 from pydicom.filereader import dcmread
 import numpy as np
 import cv2
+import functions as funcs
 
 Num = Union[int, float]
 
@@ -91,6 +92,11 @@ class DicomImage:
             img = DicomImage.__set_zoom(img, self.__zoom_factor, self.position)
 
         return img
+
+    def get_histogram(self, item: int):
+        img = self.__get_raw_image(item)
+
+        return funcs.get_histogram(img)
 
     def __get_raw_image(self, item):
         return self.__dicom_file.pixel_array[:, :, item]

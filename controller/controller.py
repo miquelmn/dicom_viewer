@@ -4,6 +4,7 @@ from model.dicom_files import DicomImage
 from tkinter import messagebox
 import numpy as np
 import math
+from matplotlib import pyplot as plt
 
 
 def exist_model(func):
@@ -27,11 +28,17 @@ class Controller:
         self.__view.set_functions(file_o=self.open_file, header_s=self.show_headers,
                                   depth=self.change_depth, zoom=self.change_zoom,
                                   movements=[self.initial_movement, self.movement],
-                                  histogram=self.histogram_movement,
+                                  histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
                                   histogram_release=self.realease_line)
 
         self.__h_last_mouse_pos = None
         self.__selected_line = None
+
+    @exist_model
+    def show_adv_image(self):
+        plt.figure()
+        plt.imshow(self.__model[self.__depth])
+        plt.show()
 
     def is_model(self) -> bool:
         return self.__model is not None
@@ -43,7 +50,7 @@ class Controller:
         )
         if filepath:
             self.__model = DicomImage(filepath)
-            self.__view.show_image(self.__model[0], update_histogram=True)
+            self.__view.show_image(self.__model[0], histogram=self.__model.get_histogram(0))
             self.__view.set_n_images(len(self.__model))
         self.__view.title(f"DICOM Reader - {filepath}")
 
@@ -66,7 +73,7 @@ class Controller:
         depth = int(value) // 2
         self.__depth = depth
 
-        self.__update_view_image()
+        self.__update_view_image(update_histogram=True)
 
     @exist_model
     def change_zoom(self, value):
@@ -137,11 +144,13 @@ class Controller:
 
         return min_idx, min_dist
 
-    def __update_view_image(self):
+    def __update_view_image(self, update_histogram=False):
         depth = self.__depth
 
+        histogram = self.__model.get_histogram(depth)
+
         if self.__model is not None and depth < len(self.__model):
-            self.__view.show_image(self.__model[depth])
+            self.__view.show_image(self.__model[depth], histogram)
 
     def start(self):
         self.__view.draw()

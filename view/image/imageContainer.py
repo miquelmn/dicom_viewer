@@ -10,8 +10,9 @@ class ContainerImage(tk.Frame):
         super().__init__(parent, **kwargs)
 
         # self.__functions = None
-        self.__canvas_histogram = canvasHistogram.CanvasHistogram(self, row=1, column=0)
-        self.__canvas_image = canvasimage.CanvasImage(self, row=0, column=0)
+        self.__canvas_image = canvasimage.CanvasImage(self, row=0, column=0, size=(600, 400))
+        self.__canvas_histogram = canvasHistogram.CanvasHistogram(self, row=1, column=0,
+                                                                  size=(680, 480))
         self.__n_images = 1
         self.__scale_depth = None
         self.__scale_zoom = None
@@ -45,12 +46,12 @@ class ContainerImage(tk.Frame):
         self.__canvas_image.draw()
         self.__canvas_histogram.draw()
 
-    def update_image(self, img: np.ndarray, update_histogram=False):
+    def update_image(self, img: np.ndarray, histogram=None):
         self.__canvas_image.show_image(img)
         self.__scale_zoom.configure(to=100)
 
-        if update_histogram:
-            self.__canvas_histogram.show_image(img)
+        if histogram is not None:
+            self.__canvas_histogram.show_histogram(histogram)
 
     def move_histogram_line(self, id_line: int, front: bool, velocity: int):
         self.__canvas_histogram.move_line(id_line, front, velocity)

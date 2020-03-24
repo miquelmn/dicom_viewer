@@ -27,18 +27,15 @@ class CanvasImage(view_component.VComponent):
 
     def __draw_img(self, img_raw=None):
         if img_raw is None:
-            img_raw = np.ones((500, 500)) * 255
+            img_raw = np.ones((self._height, self._width)) * 255
         img = CanvasImage.numpy_2_tkinter(img_raw)
 
-        canvas = tk.Canvas(self.__parent, width=600, height=300)
+        canvas = tk.Canvas(self.__parent, bd=0, width=self._width, height=self._height)
         canvas.bind("<Button-1>", self.__f_movements[0])
         canvas.bind("<ButtonRelease-1>", self.__f_movements[1])
-        canvas.grid(row=self.row, column=self.column, sticky="nsew")
-        image_on_canvas = canvas.create_image(20, 20, anchor="nw", image=img)
+        canvas.grid(row=self._row, column=self._column, sticky="new")
+        image_on_canvas = canvas.create_image(10, 0, anchor="nw", image=img)
 
-
-
-        # self.__scale_depth = scale_depth
         self.__image_raw = img_raw
         self.__image = img
         self.__image_on_canvas = image_on_canvas

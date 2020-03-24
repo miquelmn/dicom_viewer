@@ -2,6 +2,7 @@ from view import view_component
 import numpy as np
 import tkinter as tk
 import functions as funcs
+import math
 
 
 class CanvasHistogram(view_component.VComponent):
@@ -18,7 +19,6 @@ class CanvasHistogram(view_component.VComponent):
         self.__max_line = None
 
         self.__f_histogram = None
-        self.__size_img = [1000, 600]
         self.__f_release_histogram = None
 
         super().__init__(**kwargs)
@@ -41,12 +41,12 @@ class CanvasHistogram(view_component.VComponent):
 
     def __draw_histogram(self, img_raw):
         if img_raw is None:
-            img_raw = np.ones((500, 500)) * 255
-        img = CanvasHistogram.numpy_2_tkinter(img_raw)
+            img_raw = np.ones((self._height, self._width)) * 255
+        img = super().numpy_2_tkinter(img_raw)
 
-        canvas = tk.Canvas(self.__parent, width=self.__size_img[0], height=self.__size_img[1])
-        canvas.grid(row=self.row, column=self.column, sticky="nsew")
-        image_on_canvas = canvas.create_image(20, 100, anchor="nw", image=img)
+        canvas = tk.Canvas(self.__parent, width=self._width, height=self._height)
+        canvas.grid(row=self._row, column=self._column, sticky="nsew")
+        image_on_canvas = canvas.create_image(10, 0, anchor="nw", image=img)
         canvas.bind("<B1-Motion>", self.__f_histogram)
         canvas.bind("<ButtonRelease-1>", self.__f_release_histogram)
 
@@ -69,24 +69,28 @@ class CanvasHistogram(view_component.VComponent):
         self.__min_line = min_line
         self.__max_line = max_line
 
-    def show_image(self, img_raw: np.ndarray):
-        assert self.__image_on_canvas is not None
-
-        histogram = funcs.get_histogram(img_raw)
-
-        return self.show_histogram(histogram)
-
     def show_histogram(self, histogram: np.ndarray):
         assert self.__image_on_canvas is not None
 
+        pre_bbox = np.array(self.__canvas.bbox(self.__image_on_canvas))
+        pre_size = np.array([pre_bbox[2] - pre_bbox[0], pre_bbox[3] - pre_bbox[1]])
+
         img = CanvasHistogram.numpy_2_tkinter(histogram)
         self.__canvas.itemconfig(self.__image_on_canvas, image=img)
-        bbox = self.__canvas.bbox(self.__image_on_canvas)
+        bbox = np.array(self.__canvas.bbox(self.__image_on_canvas))
+        size = np.array([bbox[2] - bbox[0], bbox[3] - bbox[1]])
 
-        self.__canvas.coords(self.__max_line, bbox[2], bbox[1], bbox[2], bbox[3] - 1)
+        if np.linalg.norm((pre_size - size)) > 10:
+            self.reset_lines()
 
         self.__image_raw = histogram
         self.__image = img
+
+    def reset_lines(self):
+        bbox = np.array(self.__canvas.bbox(self.__image_on_canvas))
+
+        self.__canvas.coords(self.__max_line, bbox[2], bbox[1], bbox[2], bbox[3] - 1)
+        self.__canvas.coords(self.__min_line, bbox[0], bbox[1], bbox[0], bbox[3] - 1)
 
     def lines_bb(self):
         """

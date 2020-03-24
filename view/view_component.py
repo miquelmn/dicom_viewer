@@ -1,14 +1,17 @@
 import abc
 from PIL import Image, ImageTk
 import numpy as np
+from typing import Tuple
 
 
 class VComponent(abc.ABC):
 
-    def __init__(self, row: int, column: int):
-        self.functions = None
-        self.row = row
-        self.column = column
+    def __init__(self, row: int, column: int, size: Tuple[int, int]):
+        self._functions = None
+        self._row = row
+        self._column = column
+        self._width = size[0]
+        self._height = size[1]
 
     @abc.abstractmethod
     def draw(self):

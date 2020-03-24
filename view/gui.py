@@ -51,16 +51,19 @@ class View(tk.Tk):
 
         btn_open = tk.Button(fr_buttons, text="Obrir", command=functions["file_o"])
         btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions["header_s"])
+        btn_adv_viewer = tk.Button(fr_buttons, text="Visualitzador avançat",
+                                   command=functions["adv_viewer"])
 
         btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
+        btn_adv_viewer.grid(row=2, column=0, sticky="ew", padx=5)
 
         fr_buttons.grid(row=0, column=0, sticky="ns")
 
         self.__fr_button = fr_buttons
 
-    def show_image(self, img, update_histogram: bool = False):
-        self.__image_container.update_image(img, update_histogram)
+    def show_image(self, img, histogram: np.ndarray = None):
+        self.__image_container.update_image(img, histogram)
 
     def set_n_images(self, value: int):
         self.__image_container.set_n_images(value)
