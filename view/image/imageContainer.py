@@ -10,8 +10,8 @@ class ContainerImage(tk.Frame):
         super().__init__(parent, **kwargs)
 
         # self.__functions = None
-        self.__canvas_image = canvasimage.CanvasImage(self, row=0, column=0, size=(600, 400))
-        self.__canvas_histogram = canvasHistogram.CanvasHistogram(self, row=1, column=0,
+        self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0, size=(600, 400))
+        self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=1, column=0,
                                                                   size=(680, 480))
         self.__n_images = 1
         self.__scale_depth = None
@@ -26,8 +26,10 @@ class ContainerImage(tk.Frame):
             self.__scale_depth.configure(to=value)
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release):
-        self.__canvas_image.set_function(movements)
-        self.__canvas_histogram.set_function(histogram, histogram_release)
+        self.__canvas_image.set_function(
+            {"<Button-1>": movements[0], "<ButtonRelease-1>": movements[1]})
+        self.__canvas_histogram.set_function(
+            {"<B1-Motion>": histogram, "<ButtonRelease-1>": histogram_release})
         self.__f_depth = depth
         self.__f_zoom = zoom
 
@@ -51,7 +53,7 @@ class ContainerImage(tk.Frame):
         self.__scale_zoom.configure(to=100)
 
         if histogram is not None:
-            self.__canvas_histogram.show_histogram(histogram)
+            self.__canvas_histogram.show_image(histogram)
 
     def move_histogram_line(self, id_line: int, front: bool, velocity: int):
         self.__canvas_histogram.move_line(id_line, front, velocity)

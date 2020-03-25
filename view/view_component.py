@@ -17,9 +17,8 @@ class VComponent(abc.ABC):
     def draw(self):
         pass
 
-    @abc.abstractmethod
-    def set_function(self, **kwargs):
-        pass
+    def set_function(self, functions: dict, **kwargs):
+        self._functions = functions
 
     @staticmethod
     def numpy_2_tkinter(img_raw: np.ndarray):
