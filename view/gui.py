@@ -17,9 +17,9 @@ class View(tk.Tk):
         self.__fr_images = None
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
-                      **kwargs):
+                      distance, **kwargs):
         self.__image_container.set_functions(movements, depth, zoom, histogram, histogram_release,
-                                             pixel_value)
+                                             pixel_value, distance)
         self.__functions = kwargs
 
     def set_title(self, titol: str):

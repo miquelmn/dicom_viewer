@@ -104,6 +104,23 @@ class DicomImage:
 
         return funcs.get_histogram(img)
 
+    def get_distance(self, point_1, point_2) -> float:
+        """ Calculate the distance between two points.
+
+        Args:
+            point_1 (np.array):
+            point_2 (np.array):
+
+        Returns:
+            A float containing the distance between two points on the image
+        """
+        point_1 = point_1 / self.__zoom_factor
+        point_2 = point_2 / self.__zoom_factor
+
+        distance = np.linalg.norm(point_1 - point_2)
+
+        return distance
+
     def get_pixel(self, x, y, z):
         img = self.__get_img(z, flag_contrast=False, flag_zoom=True)
 

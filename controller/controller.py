@@ -5,6 +5,7 @@ from tkinter import messagebox
 import numpy as np
 import math
 from matplotlib import pyplot as plt
+from typing import List, Union
 
 
 def exist_model(func):
@@ -30,12 +31,14 @@ class Controller:
                                   movements=[self.initial_movement, self.movement],
                                   histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
                                   histogram_release=self.realease_line,
-                                  pixel_value=('<Motion>', self.position_value))
+                                  pixel_value=('<Motion>', self.position_value),
+                                  distance=('<Button-3>', self.distance))
 
         self.__h_last_mouse_pos = None
         self.__selected_line = None
 
         self.__selected_point = None
+        self.__distance_selected_point = None
 
     @exist_model
     def show_adv_image(self):
@@ -148,14 +151,49 @@ class Controller:
         return min_idx, min_dist
 
     def position_value(self, event):
+        img_coordinates = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
+        if img_coordinates is not None:
+            self.__view.set_pixel_text(
+                str(self.__model.get_pixel(img_coordinates[0], img_coordinates[1], self.__depth)))
+
+    @exist_model
+    def distance(self, event):
+        previous_point = self.__distance_selected_point
+        actual_point = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
+
+        if previous_point is not None:
+            self.__distance_selected_point = None
+
+            actual_point = np.array(actual_point)
+            previous_point = np.array(previous_point)
+
+            distance = self.__model.get_distance(actual_point, previous_point)
+        else:
+            self.__distance_selected_point = actual_point
+            distance = None
+
+        print(distance)
+        # return distance
+
+    def __gui_coordinates_2_img_coordinates(self, gui_coordinates: List[int]):
+        """
+        Converts GUI coordinates to img coordinates.
+
+        Args:
+            gui_coordinates (List[int]):
+
+        Returns:
+
+        """
+        img_coordinates = None
         if self.is_model():
             bbox = self.__view.get_image_position()
 
-            x = event.x - bbox[0]
-            y = event.y - bbox[1]
+            if 0 < gui_coordinates[0] < (bbox[2] - bbox[0]) and 0 < gui_coordinates[1] < (
+                    bbox[3] - bbox[1]):
+                img_coordinates = [(gui_coordinates[0] - bbox[0]), (gui_coordinates[1] - bbox[1])]
 
-            if 0 < x < (bbox[2] - bbox[0]) and 0 < y < (bbox[3] - bbox[1]):
-                self.__view.set_pixel_text(str(self.__model.get_pixel(x, y, self.__depth)))
+        return img_coordinates
 
     def __update_view_image(self, update_histogram=False):
         depth = self.__depth

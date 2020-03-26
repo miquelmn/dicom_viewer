@@ -29,10 +29,11 @@ class ContainerImage(tk.Frame):
         if self.__scale_depth is not None:
             self.__scale_depth.configure(to=value)
 
-    def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value):
+    def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
+                      distance):
         self.__canvas_image.set_function(
             {"<Button-1>": movements[0], "<ButtonRelease-1>": movements[1],
-             pixel_value[0]: pixel_value[1]})
+             pixel_value[0]: pixel_value[1], distance[0]: distance[1]})
         self.__canvas_histogram.set_function(
             {"<B1-Motion>": histogram, "<ButtonRelease-1>": histogram_release})
         self.__f_depth = depth
