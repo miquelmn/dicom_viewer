@@ -16,8 +16,10 @@ class View(tk.Tk):
         self.__fr_button = None
         self.__fr_images = None
 
-    def set_functions(self, movements, depth, zoom, histogram, histogram_release, **kwargs):
-        self.__image_container.set_functions(movements, depth, zoom, histogram, histogram_release)
+    def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
+                      **kwargs):
+        self.__image_container.set_functions(movements, depth, zoom, histogram, histogram_release,
+                                             pixel_value)
         self.__functions = kwargs
 
     def set_title(self, titol: str):
@@ -76,3 +78,9 @@ class View(tk.Tk):
 
     def get_histogram_position(self):
         return self.__image_container.get_histogram_position()
+
+    def get_image_position(self):
+        return self.__image_container.get_image_position()
+
+    def set_pixel_text(self, value: str):
+        self.__image_container.set_text_value(value)

@@ -86,9 +86,15 @@ class DicomImage:
         Returns:
 
         """
+        img = self.__get_img(item)
+
+        return img
+
+    def __get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True):
         img = self.__dicom_file.pixel_array[:, :, item]
-        img = DicomImage.__set_contrast(img, self.__contrast)
-        if self.__zoom_factor > 1:
+        if flag_contrast:
+            img = DicomImage.__set_contrast(img, self.__contrast)
+        if flag_zoom and self.__zoom_factor > 1:
             img = DicomImage.__set_zoom(img, self.__zoom_factor, self.position)
 
         return img
@@ -97,6 +103,11 @@ class DicomImage:
         img = self.__get_raw_image(item)
 
         return funcs.get_histogram(img)
+
+    def get_pixel(self, x, y, z):
+        img = self.__get_img(z, flag_contrast=False, flag_zoom=True)
+
+        return img[y][x]
 
     def __get_raw_image(self, item):
         return self.__dicom_file.pixel_array[:, :, item]
@@ -153,8 +164,8 @@ class DicomImage:
         img_c[reverse_selection] = (img_c[reverse_selection] - minimum_value) / (
                 maximum_value - minimum_value)
 
-        img_c[img > maximum_value] = 1
-        img_c[img < minimum_value] = 0
+        img_c[img >= maximum_value] = 1
+        img_c[img <= minimum_value] = 0
 
         img_c = img_c * 255
 

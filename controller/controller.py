@@ -29,10 +29,13 @@ class Controller:
                                   depth=self.change_depth, zoom=self.change_zoom,
                                   movements=[self.initial_movement, self.movement],
                                   histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
-                                  histogram_release=self.realease_line)
+                                  histogram_release=self.realease_line,
+                                  pixel_value=('<Motion>', self.position_value))
 
         self.__h_last_mouse_pos = None
         self.__selected_line = None
+
+        self.__selected_point = None
 
     @exist_model
     def show_adv_image(self):
@@ -143,6 +146,16 @@ class Controller:
                 min_idx = idx
 
         return min_idx, min_dist
+
+    def position_value(self, event):
+        if self.is_model():
+            bbox = self.__view.get_image_position()
+
+            x = event.x - bbox[0]
+            y = event.y - bbox[1]
+
+            if 0 < x < (bbox[2] - bbox[0]) and 0 < y < (bbox[3] - bbox[1]):
+                self.__view.set_pixel_text(str(self.__model.get_pixel(x, y, self.__depth)))
 
     def __update_view_image(self, update_histogram=False):
         depth = self.__depth

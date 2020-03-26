@@ -5,17 +5,21 @@ import numpy as np
 
 
 class ContainerImage(tk.Frame):
+    __pixel_value_fixed = "Valor de píxel: "
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
 
         # self.__functions = None
         self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0, size=(600, 400))
-        self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=1, column=0,
+        self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=2, column=0,
                                                                   size=(680, 480))
         self.__n_images = 1
         self.__scale_depth = None
         self.__scale_zoom = None
+        self.__label_pixel = None
+
+        self.__pixel_value = ""
 
         self.__f_depth = None
         self.__f_zoom = None
@@ -25,9 +29,10 @@ class ContainerImage(tk.Frame):
         if self.__scale_depth is not None:
             self.__scale_depth.configure(to=value)
 
-    def set_functions(self, movements, depth, zoom, histogram, histogram_release):
+    def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value):
         self.__canvas_image.set_function(
-            {"<Button-1>": movements[0], "<ButtonRelease-1>": movements[1]})
+            {"<Button-1>": movements[0], "<ButtonRelease-1>": movements[1],
+             pixel_value[0]: pixel_value[1]})
         self.__canvas_histogram.set_function(
             {"<B1-Motion>": histogram, "<ButtonRelease-1>": histogram_release})
         self.__f_depth = depth
@@ -38,10 +43,14 @@ class ContainerImage(tk.Frame):
 
         self.__scale_depth = tk.Scale(frame_img, from_=0, to=1, orient=tk.HORIZONTAL,
                                       command=self.__f_depth)
-        self.__scale_depth.grid(row=2, column=0, sticky="nsew")
+        self.__scale_depth.grid(row=3, column=0, sticky="nsew")
 
         self.__scale_zoom = tk.Scale(frame_img, from_=1, to=1, command=self.__f_zoom)
         self.__scale_zoom.grid(row=0, column=2, sticky="nsew", rowspan=2)
+
+        self.__label_pixel = tk.Label(frame_img, anchor="nw",
+                                      text=self.__pixel_value_fixed + self.__pixel_value)
+        self.__label_pixel.grid(row=1, column=0, sticky="W")
 
         frame_img.grid(row=0, column=1, sticky="nsew")
 
@@ -61,5 +70,16 @@ class ContainerImage(tk.Frame):
     def lines_position(self):
         return list(self.__canvas_histogram.lines_bb())
 
+    def get_image_position(self) -> List[int]:
+        return self.__canvas_image.get_bbox()
+
     def get_histogram_position(self) -> List[int]:
         return self.__canvas_histogram.get_bbox()
+
+    def set_text_value(self, value: str):
+        self.__pixel_value = value
+
+        self.__label_pixel["text"] = self.__get_label_text()
+
+    def __get_label_text(self) -> str:
+        return self.__pixel_value_fixed + self.__pixel_value
