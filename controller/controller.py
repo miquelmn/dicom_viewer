@@ -5,7 +5,8 @@ from tkinter import messagebox
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from typing import List, Union
+from typing import List
+import time
 
 
 def exist_model(func):
@@ -14,6 +15,22 @@ def exist_model(func):
             func(controller, *args)
         else:
             messagebox.showerror("Error", "No has carregat una imatge vàlida")
+
+    return wrapper
+
+
+def save_actions(func):
+    name = func.__name__
+
+    def wrapper(controller, *args):
+        date = time.strftime("%H:%M:%S")
+        str_args = ""
+        for a in args:
+            str_args += str(a)
+        row = [date, name, str_args]
+        controller.add_2_history(row)
+        func(controller, *args)
+
 
     return wrapper
 
@@ -30,17 +47,22 @@ class Controller:
                                   depth=self.change_depth, zoom=self.change_zoom,
                                   movements=[self.initial_movement, self.movement],
                                   histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
-                                  histogram_release=self.realease_line,
+                                  histogram_release=self.move_histogram, history=self.show_history,
                                   pixel_value=('<Motion>', self.position_value),
-                                  distance=('<Button-3>', self.distance))
+                                  distance=('<Button-3>', self.calc_distance))
 
         self.__h_last_mouse_pos = None
         self.__selected_line = None
 
         self.__selected_point = None
         self.__distance_selected_point = None
+        self.__history = []
+
+    def add_2_history(self, row):
+        self.__history.append(row)
 
     @exist_model
+    @save_actions
     def show_adv_image(self):
         plt.figure()
         plt.imshow(self.__model[self.__depth])
@@ -49,6 +71,7 @@ class Controller:
     def is_model(self) -> bool:
         return self.__model is not None
 
+    @save_actions
     def open_file(self):
         """Open a file for editing."""
         filepath = askopenfilename(
@@ -61,6 +84,7 @@ class Controller:
         self.__view.title(f"DICOM Reader - {filepath}")
 
     @exist_model
+    @save_actions
     def show_headers(self):
         dades = []
 
@@ -69,12 +93,15 @@ class Controller:
             str_h = str(h)
             if hasattr(v, 'length'):
                 if v.length > 200:
-                    print(v.length)
                     str_v = str_v[:400]
             dades.append([str_h, str_v])
-        tktable.make_table("Capceleres", dades)
+        tktable.make_table("Capceleres", dades, ["Clau", "Valor"])
+
+    def show_history(self):
+        tktable.make_table("History", self.__history, ["Temps", "Funció", 'Parametres'])
 
     @exist_model
+    @save_actions
     def change_depth(self, value):
         depth = int(value) // 2
         self.__depth = depth
@@ -82,6 +109,7 @@ class Controller:
         self.__update_view_image(update_histogram=True)
 
     @exist_model
+    @save_actions
     def change_zoom(self, value):
         zoom = int(value)
 
@@ -93,6 +121,7 @@ class Controller:
         self.__position_first = np.array([event.x, event.y])
 
     @exist_model
+    @save_actions
     def movement(self, event):
         assert self.__position_first is not None
 
@@ -125,7 +154,8 @@ class Controller:
         self.__h_last_mouse_pos = new_pos
 
     @exist_model
-    def realease_line(self, event):
+    @save_actions
+    def move_histogram(self, event):
         self.__selected_line = None
         self.__h_last_mouse_pos = None
 
@@ -157,7 +187,8 @@ class Controller:
                 str(self.__model.get_pixel(img_coordinates[0], img_coordinates[1], self.__depth)))
 
     @exist_model
-    def distance(self, event):
+    @save_actions
+    def calc_distance(self, event):
         previous_point = self.__distance_selected_point
         actual_point = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
 
@@ -174,7 +205,6 @@ class Controller:
 
         if distance is not None:
             self.__view.set_distance_text(str(distance))
-        # return distance
 
     def __gui_coordinates_2_img_coordinates(self, gui_coordinates: List[int]):
         """

@@ -1,4 +1,3 @@
-from typing import List
 import tkinter as tk
 import numpy as np
 from view.image import imageContainer
@@ -55,10 +54,12 @@ class View(tk.Tk):
         btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions["header_s"])
         btn_adv_viewer = tk.Button(fr_buttons, text="Visualitzador avançat",
                                    command=functions["adv_viewer"])
+        btn_history = tk.Button(fr_buttons, text="Historial", command=functions["history"])
 
         btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
         btn_adv_viewer.grid(row=2, column=0, sticky="ew", padx=5)
+        btn_history.grid(row=3, column=0, sticky="ew", padx=5)
 
         fr_buttons.grid(row=0, column=0, sticky="ns")
 
