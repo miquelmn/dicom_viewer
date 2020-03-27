@@ -172,7 +172,8 @@ class Controller:
             self.__distance_selected_point = actual_point
             distance = None
 
-        print(distance)
+        if distance is not None:
+            self.__view.set_distance_text(str(distance))
         # return distance
 
     def __gui_coordinates_2_img_coordinates(self, gui_coordinates: List[int]):

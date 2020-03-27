@@ -6,6 +6,7 @@ import numpy as np
 
 class ContainerImage(tk.Frame):
     __pixel_value_fixed = "Valor de píxel: "
+    __distance_value_fixed = " Distància: "
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
@@ -20,6 +21,7 @@ class ContainerImage(tk.Frame):
         self.__label_pixel = None
 
         self.__pixel_value = ""
+        self.__distance_value = ""
 
         self.__f_depth = None
         self.__f_zoom = None
@@ -50,7 +52,7 @@ class ContainerImage(tk.Frame):
         self.__scale_zoom.grid(row=0, column=2, sticky="nsew", rowspan=2)
 
         self.__label_pixel = tk.Label(frame_img, anchor="nw",
-                                      text=self.__pixel_value_fixed + self.__pixel_value)
+                                      text=self.__get_label_text())
         self.__label_pixel.grid(row=1, column=0, sticky="W")
 
         frame_img.grid(row=0, column=1, sticky="nsew")
@@ -82,5 +84,11 @@ class ContainerImage(tk.Frame):
 
         self.__label_pixel["text"] = self.__get_label_text()
 
+    def set_distance_value(self, value: str):
+        self.__distance_value = value
+
+        self.__label_pixel["text"] = self.__get_label_text()
+
     def __get_label_text(self) -> str:
-        return self.__pixel_value_fixed + self.__pixel_value
+        return self.__pixel_value_fixed + self.__pixel_value + self.__distance_value_fixed + \
+               self.__distance_value

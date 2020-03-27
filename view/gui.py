@@ -84,3 +84,6 @@ class View(tk.Tk):
 
     def set_pixel_text(self, value: str):
         self.__image_container.set_text_value(value)
+
+    def set_distance_text(self, value: str):
+        self.__image_container.set_distance_value(value)
