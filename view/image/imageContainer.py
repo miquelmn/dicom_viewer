@@ -12,7 +12,9 @@ class ContainerImage(tk.Frame):
         super().__init__(parent, **kwargs)
 
         # self.__functions = None
-        self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0, size=(600, 400))
+        space = (600, 400)
+        self.__img_size = space
+        self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0, size=space)
         self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=2, column=0,
                                                                   size=(680, 480))
         self.__n_images = 1
@@ -59,6 +61,10 @@ class ContainerImage(tk.Frame):
 
         self.__canvas_image.draw()
         self.__canvas_histogram.draw()
+
+    @property
+    def img_space(self):
+        return self.__img_size
 
     def update_image(self, img: np.ndarray, histogram=None):
         self.__canvas_image.show_image(img)

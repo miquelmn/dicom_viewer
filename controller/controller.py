@@ -78,7 +78,7 @@ class Controller:
             filetypes=[("Dicom files", "*.dcm")]
         )
         if filepath:
-            self.__model = DicomImage(filepath)
+            self.__model = DicomImage(filepath, self.__view.img_space)
             self.__view.show_image(self.__model[0], histogram=self.__model.get_histogram(0))
             self.__view.set_n_images(len(self.__model))
         self.__view.title(f"DICOM Reader - {filepath}")
@@ -191,17 +191,17 @@ class Controller:
     def calc_distance(self, event):
         previous_point = self.__distance_selected_point
         actual_point = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
+        distance = None
 
-        if previous_point is not None:
+        if previous_point is not None and actual_point is not None:
             self.__distance_selected_point = None
 
             actual_point = np.array(actual_point)
             previous_point = np.array(previous_point)
 
             distance = self.__model.get_distance(actual_point, previous_point)
-        else:
+        elif actual_point is not None:
             self.__distance_selected_point = actual_point
-            distance = None
 
         if distance is not None:
             self.__view.set_distance_text(str(distance))

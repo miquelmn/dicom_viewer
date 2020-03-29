@@ -88,3 +88,7 @@ class View(tk.Tk):
 
     def set_distance_text(self, value: str):
         self.__image_container.set_distance_value(value)
+
+    @property
+    def img_space(self):
+        return self.__image_container.img_space

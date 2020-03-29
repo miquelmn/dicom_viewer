@@ -15,13 +15,19 @@ class DicomImage:
 
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, max_size: List[Num] = None):
         self.__path = path
         self.__dicom_file = dcmread(path)
         self.__zoom_factor = 1
         self.__position = [0, 0]
 
         self.__contrast = [0, 1]
+
+        if max_size is None:
+            max_size = [float('inf'), float('inf')]
+        self.__max_size = max_size
+        self.__real_size = None
+        self.__reduced_size = None
 
     @property
     def images(self) -> np.ndarray:
@@ -31,6 +37,9 @@ class DicomImage:
 
         """
         return self.__dicom_file.pixel_array
+
+    def set_max_size(self, size):
+        self.__max_size = size
 
     def minimum_value(self, item: int) -> Num:
         return self.__get_raw_image(item).min()
@@ -92,6 +101,34 @@ class DicomImage:
 
     def __get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True):
         img = self.__dicom_file.pixel_array[:, :, item]
+
+        size = None
+        if self.__real_size is None:
+            self.__real_size = img.shape[::-1]
+
+        if self.__reduced_size is None:
+            if img.shape[0] > self.__max_size[0] or img.shape[1] > self.__max_size[1]:
+                max_idx = np.argmax(img.shape)
+                min_idx = np.argmin(img.shape)
+
+                rel = img.shape[min_idx] / img.shape[max_idx]
+
+                max_val = self.__max_size[max_idx]
+                min_val = int(rel * max_val)
+
+                size = np.zeros(2, dtype=int)
+
+                size[max_idx] = max_val
+                size[min_idx] = min_val
+
+                size = tuple(size[::-1])
+                self.__reduced_size = size
+        else:
+            size = self.__reduced_size
+
+        if size is not None:
+            img = cv2.resize(img, size)
+
         if flag_contrast:
             img = DicomImage.__set_contrast(img, self.__contrast)
         if flag_zoom and self.__zoom_factor > 1:
@@ -116,6 +153,12 @@ class DicomImage:
         """
         point_1 = point_1 / self.__zoom_factor
         point_2 = point_2 / self.__zoom_factor
+
+        if self.__reduced_size is not None:
+            rel = self.__real_size[0] / self.__reduced_size[0], self.__real_size[1] / \
+                  self.__reduced_size[1]
+            point_1 = np.multiply(point_1, rel)
+            point_2 = np.multiply(point_2, rel)
 
         distance = np.linalg.norm(point_1 - point_2)
 
