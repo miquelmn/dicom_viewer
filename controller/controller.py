@@ -7,6 +7,7 @@ import math
 from matplotlib import pyplot as plt
 from typing import List
 import time
+import pandas as pd
 
 
 def exist_model(func):
@@ -31,8 +32,19 @@ def save_actions(func):
         controller.add_2_history(row)
         func(controller, *args)
 
-
     return wrapper
+
+
+LOOKUP = None
+
+
+def load_lookup():
+    global LOOKUP
+
+    if LOOKUP is None:
+        df = pd.read_excel("./in/lookup.ods", engine="odf")
+        df = df[["Tag", "Name"]]
+        LOOKUP = df.set_index('Tag').T.to_dict('list')
 
 
 class Controller:
@@ -86,14 +98,17 @@ class Controller:
     @exist_model
     @save_actions
     def show_headers(self):
+        global LOOKUP
         dades = []
 
         for h, v in self.__model.get_header():
             str_v = str(v)
-            str_h = str(h)
+            str_h = str(h).replace(" ", "")
             if hasattr(v, 'length'):
                 if v.length > 200:
                     str_v = str_v[:400]
+            if str_h in LOOKUP:
+                str_h = LOOKUP[str_h][0]
             dades.append([str_h, str_v])
         tktable.make_table("Capceleres", dades, ["Clau", "Valor"])
 
@@ -235,4 +250,5 @@ class Controller:
             self.__view.show_image(self.__model[depth], histogram)
 
     def start(self):
+        load_lookup()
         self.__view.draw()
