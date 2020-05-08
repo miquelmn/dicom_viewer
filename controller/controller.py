@@ -61,6 +61,7 @@ class Controller:
                                   histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
                                   histogram_release=self.move_histogram, history=self.show_history,
                                   pixel_value=('<Motion>', self.position_value),
+                                  sel_dim=self.change_dim,
                                   distance=('<Button-3>', self.calc_distance))
 
         self.__h_last_mouse_pos = None
@@ -129,6 +130,20 @@ class Controller:
         zoom = int(value)
 
         self.__model.resize_factor = zoom
+        self.__update_view_image()
+
+    @exist_model
+    @save_actions
+    def change_dim(self, value):
+        dim = 0
+        if value == "First":
+            dim = 0
+        elif value == "Second":
+            dim = 1
+        elif value == "Third":
+            dim = 2
+
+        self.__model.dim = dim
         self.__update_view_image()
 
     @exist_model

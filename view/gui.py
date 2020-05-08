@@ -56,10 +56,17 @@ class View(tk.Tk):
                                    command=functions["adv_viewer"])
         btn_history = tk.Button(fr_buttons, text="Historial", command=functions["history"])
 
+        variable = tk.StringVar(fr_buttons)
+        variable.set("First")  # default value
+
+        sel_dims = tk.OptionMenu(fr_buttons, variable, "First", "Second", "Third",
+                                 command=functions["sel_dim"])
+
         btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
         btn_adv_viewer.grid(row=2, column=0, sticky="ew", padx=5)
         btn_history.grid(row=3, column=0, sticky="ew", padx=5)
+        sel_dims.grid(row=4, column=0, sticky="ew", padx=5)
 
         fr_buttons.grid(row=0, column=0, sticky="ns")
 

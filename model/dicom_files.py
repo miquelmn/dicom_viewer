@@ -36,6 +36,7 @@ class DicomImage:
         self.__max_size = max_size
         self.__real_size = None
         self.__reduced_size = None
+        self.__selected_dim = 0
 
     @property
     def images(self) -> np.ndarray:
@@ -45,6 +46,14 @@ class DicomImage:
 
         """
         return self.__dicom_file.pixel_array
+
+    @property
+    def dim(self) -> Num:
+        return self.__selected_dim
+
+    @dim.setter
+    def dim(self, value):
+        self.__selected_dim = value
 
     def set_max_size(self, size):
         self.__max_size = size
@@ -103,12 +112,12 @@ class DicomImage:
         Returns:
 
         """
-        img = self.__get_img(item)
 
-        return img
+        return self.get_img(item, dim=self.__selected_dim)
 
-    def __get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True):
-        img = self.__dicom_file.pixel_array[item, :, :]
+    def get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True,
+                dim: int = 0):
+        img = self.__dicom_file.pixel_array.take(indices=item, axis=dim)
 
         size = None
         if self.__real_size is None:
@@ -173,7 +182,7 @@ class DicomImage:
         return distance
 
     def get_pixel(self, x, y, z):
-        img = self.__get_img(z, flag_contrast=False, flag_zoom=True)
+        img = self.get_img(z, flag_contrast=False, flag_zoom=True)
 
         return img[y][x]
 
@@ -267,3 +276,7 @@ class DicomImage:
 
     def move_image(self, differential):
         self.position += differential[::-1] // 2
+
+    @staticmethod
+    def corregister(img1, img2):
+        pass
