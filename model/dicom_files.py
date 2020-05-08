@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+""" Model class of an architecture MVC.
+
+This model contains the information of each the images to visualize. The main focus of this class
+is a set of transformations to the data.
+
+"""
+
 from typing import List, Union
 from pydicom.filereader import dcmread
 import numpy as np
@@ -100,7 +108,7 @@ class DicomImage:
         return img
 
     def __get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True):
-        img = self.__dicom_file.pixel_array[:, :, item]
+        img = self.__dicom_file.pixel_array[item, :, :]
 
         size = None
         if self.__real_size is None:
@@ -207,6 +215,17 @@ class DicomImage:
 
     @staticmethod
     def __set_contrast(img: np.ndarray, contrast: List[Num]):
+        """ Change the contrast of the image.
+
+        The contrast of an image can be set through a numericall transformation.
+
+        Args:
+            img:
+            contrast:
+
+        Returns:
+
+        """
         assert max(contrast) <= 1 and min(contrast) >= 0
 
         img_c = np.copy(img)
