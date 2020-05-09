@@ -6,11 +6,12 @@ is a set of transformations to the data.
 
 """
 
-from typing import List, Union
+from typing import List, Union, Tuple
 from pydicom.filereader import dcmread
 import numpy as np
 import cv2
 from viewer.common import functions as funcs
+from . import segmentation
 
 Num = Union[int, float]
 
@@ -37,6 +38,27 @@ class DicomImage:
         self.__real_size = None
         self.__reduced_size = None
         self.__selected_dim = 0
+
+    def apply_watershed(self, item, markers: List[Tuple[int, int]]) -> np.ndarray:
+        """ Applies watershed algorithm with markers.
+
+
+        Args:
+            item:
+            markers:
+
+        Returns:
+
+        """
+        img = self[item]
+
+        img = ((img - img.min()) / (img.max() - img.min()))*255
+        img = img.astype(np.uint8)
+
+        markers = segmentation.build_marker(markers, radius=10, img_size=img.shape)
+        mask = segmentation.apply_watershed(markers, img)
+
+        return mask
 
     @property
     def images(self) -> np.ndarray:
@@ -117,7 +139,7 @@ class DicomImage:
 
     def get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True,
                 dim: int = 0):
-        img = self.__dicom_file.pixel_array.take(indices=item, axis=dim)
+        img = self.__get_raw_image(item, dim)
 
         size = None
         if self.__real_size is None:

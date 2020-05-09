@@ -67,7 +67,6 @@ class Controller:
                                   histogram_release=self.move_histogram,
                                   pixel_value=('<Motion>', self.position_value),
                                   distance=('<Button-3>', self.calc_distance),
-                                  choose_pixel={'<Button-1>', self.select_pixel},
                                   sel_dim=(["First", "Second", "Third"], self.change_dim),
                                   Visualitzador_avançat=self.show_adv_image,
                                   Obrir=self.open_file, Capceleres=self.show_headers,
@@ -89,13 +88,6 @@ class Controller:
 
     @exist_model
     @save_actions
-    def select_pixel(self, event):
-        punt = event.x, event.y
-
-        self.__markers.append(punt)
-
-    @exist_model
-    @save_actions
     def show_adv_image(self):
         plt.figure()
         plt.imshow(self.__model[self.__depth])
@@ -107,10 +99,12 @@ class Controller:
     @exist_model
     @save_actions
     def watershed(self):
-        if self.__flag_watershed and self.__markers:
+        if self.__flag_watershed and not self.__markers:
             messagebox.showerror("Error", "No has seleccionat marcadors inicials")
         elif self.__flag_watershed:
-            self.__model.watershed(self.__markers)
+            mask = self.__model.apply_watershed(self.__depth, self.__markers)
+            plt.imshow(mask)
+            plt.show()
         self.__markers = []
         self.__flag_watershed = not self.__flag_watershed
 
@@ -180,20 +174,24 @@ class Controller:
 
     @exist_model
     def initial_movement(self, event):
-        self.__position_first = np.array([event.x, event.y])
+        if self.__flag_watershed:
+            self.__markers.append((event.y, event.x))
+        else:
+            self.__position_first = np.array([event.x, event.y])
 
     @exist_model
     @save_actions
     def movement(self, event):
-        assert self.__position_first is not None
+        if not self.__flag_watershed:
+            assert self.__position_first is not None
 
-        position = np.array([event.x, event.y])
-        old_position = self.__position_first
+            position = np.array([event.x, event.y])
+            old_position = self.__position_first
 
-        self.__position_first = None
+            self.__position_first = None
 
-        self.__model.move_image(old_position - position)
-        self.__update_view_image()
+            self.__model.move_image(old_position - position)
+            self.__update_view_image()
 
     @exist_model
     def histogram_movement(self, event):

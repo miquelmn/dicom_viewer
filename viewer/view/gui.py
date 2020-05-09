@@ -20,7 +20,7 @@ class View(tk.Tk):
 
         self.__title = title
         self.__image_container = imageContainer.ContainerImage(self, relief=tk.RAISED, bd=2)
-        self.__button_functions = []
+        self.__button_functions = {}
         self.__func_selectors = []
 
         self.__fr_button = None
@@ -71,7 +71,7 @@ class View(tk.Tk):
         functions = self.__button_functions
 
         buttons = []
-        for name, func in functions:
+        for name, func in functions.items():
             name = name.replace("_", " ")
             buttons.append(tk.Button(fr_buttons, text=name, command=func))
 
@@ -79,7 +79,7 @@ class View(tk.Tk):
             variable = tk.StringVar(fr_buttons)
             variable.set("First")  # default value
 
-            buttons.append(tk.OptionMenu(fr_buttons, variable, values,  command=func))
+            buttons.append(tk.OptionMenu(fr_buttons, variable, *values, command=func))
 
         for row, b in enumerate(buttons):
             b.grid(row=row, column=0, sticky="ew", padx=5)
