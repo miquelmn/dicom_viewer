@@ -61,15 +61,19 @@ class Controller:
         self.__model = None
         self.__depth = 0
 
-        self.__position_first = None
-        self.__view.set_functions(file_o=self.open_file, header_s=self.show_headers,
+        self.__view.set_functions(movements=[self.initial_movement, self.movement],
                                   depth=self.change_depth, zoom=self.change_zoom,
-                                  movements=[self.initial_movement, self.movement],
-                                  histogram=self.histogram_movement, adv_viewer=self.show_adv_image,
-                                  histogram_release=self.move_histogram, history=self.show_history,
+                                  histogram=self.histogram_movement,
+                                  histogram_release=self.move_histogram,
                                   pixel_value=('<Motion>', self.position_value),
-                                  sel_dim=self.change_dim,
-                                  distance=('<Button-3>', self.calc_distance))
+                                  distance=('<Button-3>', self.calc_distance),
+                                  choose_pixel={'<Button-1>', self.select_pixel},
+                                  sel_dim=(["First", "Second", "Third"], self.change_dim),
+                                  Visualitzador_avançat=self.show_adv_image,
+                                  Obrir=self.open_file, Capceleres=self.show_headers,
+                                  Historial=self.show_history, Watershed=self.watershed)
+
+        self.__position_first = None
 
         self.__h_last_mouse_pos = None
         self.__selected_line = None
@@ -77,9 +81,18 @@ class Controller:
         self.__selected_point = None
         self.__distance_selected_point = None
         self.__history = []
+        self.__flag_watershed = False
+        self.__markers = []
 
     def add_2_history(self, row):
         self.__history.append(row)
+
+    @exist_model
+    @save_actions
+    def select_pixel(self, event):
+        punt = event.x, event.y
+
+        self.__markers.append(punt)
 
     @exist_model
     @save_actions
@@ -90,6 +103,16 @@ class Controller:
 
     def is_model(self) -> bool:
         return self.__model is not None
+
+    @exist_model
+    @save_actions
+    def watershed(self):
+        if self.__flag_watershed and self.__markers:
+            messagebox.showerror("Error", "No has seleccionat marcadors inicials")
+        elif self.__flag_watershed:
+            self.__model.watershed(self.__markers)
+        self.__markers = []
+        self.__flag_watershed = not self.__flag_watershed
 
     @save_actions
     def open_file(self):
