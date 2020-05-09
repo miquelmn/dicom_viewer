@@ -1,4 +1,4 @@
-from view import view_component
+from viewer.view import view_component
 import numpy as np
 import tkinter as tk
 

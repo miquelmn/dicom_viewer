@@ -1,4 +1,4 @@
-from model import dicom_files
+from viewer.model import dicom_files
 from matplotlib import pyplot as plt
 
 

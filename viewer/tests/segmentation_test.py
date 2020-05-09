@@ -1,5 +1,4 @@
-import pytest
-from model import segmentation
+from viewer.model import segmentation
 import numpy as np
 
 

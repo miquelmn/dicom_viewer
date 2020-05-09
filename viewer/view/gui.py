@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-from view.image import imageContainer
+from viewer.view.image import imageContainer
 
 
 class View(tk.Tk):

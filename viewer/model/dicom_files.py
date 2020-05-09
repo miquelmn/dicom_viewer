@@ -10,7 +10,7 @@ from typing import List, Union
 from pydicom.filereader import dcmread
 import numpy as np
 import cv2
-import functions as funcs
+from viewer.common import functions as funcs
 
 Num = Union[int, float]
 
@@ -198,7 +198,7 @@ class DicomImage:
     def __set_zoom(img: np.ndarray, zoom: Num, position: List[int]):
         """ Renders and image with zoom and it's position
 
-        This function apply zoom to an image. The zoom is aplied in two steps. Fist of all the
+        This function apply zoom to an image. The zoom is aplied resources two steps. Fist of all the
         image is resized to the size passed as parameter. Secondly the resized image is cropped
         to the original size. Doing this we accomplish a zoom effect. To move the zoom position
         we add a the value to the initial crop position.

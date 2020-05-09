@@ -1,6 +1,6 @@
-from view import gui, tktable
+from viewer.view import tktable, gui
 from tkinter.filedialog import askopenfilename
-from model.dicom_files import DicomImage
+from viewer.model.dicom_files import DicomImage
 from tkinter import messagebox
 import numpy as np
 import math
@@ -8,6 +8,8 @@ from matplotlib import pyplot as plt
 from typing import List
 import time
 import pandas as pd
+import pkg_resources
+import os
 
 
 def exist_model(func):
@@ -42,7 +44,12 @@ def load_lookup():
     global LOOKUP
 
     if LOOKUP is None:
-        df = pd.read_excel("./in/lookup.ods", engine="odf")
+        path = pkg_resources.resource_filename(
+            __name__,
+            os.path.join(os.pardir, 'resources', 'lookup.ods')
+        )
+
+        df = pd.read_excel(path, engine="odf")
         df = df[["Tag", "Name"]]
         LOOKUP = df.set_index('Tag').T.to_dict('list')
 

@@ -1,4 +1,4 @@
-from view.image import canvasimage
+from viewer.view.image import canvasimage
 import numpy as np
 
 
