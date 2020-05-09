@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+""" Class to generate the view of the app
+
+The view of the apps is fully defined in this module. The view is made with the library tkinter
+
+Class:
+    View (tkinter.Tk). Class containing the main window.
+
+"""
+
 import tkinter as tk
 import numpy as np
 from viewer.view.image import imageContainer
@@ -10,16 +20,18 @@ class View(tk.Tk):
 
         self.__title = title
         self.__image_container = imageContainer.ContainerImage(self, relief=tk.RAISED, bd=2)
-        self.__functions = None
+        self.__button_functions = []
+        self.__func_selectors = []
 
         self.__fr_button = None
         self.__fr_images = None
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
-                      distance, **kwargs):
+                      distance, sel_dim, **kwargs):
         self.__image_container.set_functions(movements, depth, zoom, histogram, histogram_release,
                                              pixel_value, distance)
-        self.__functions = kwargs
+        self.__func_selectors = [sel_dim]
+        self.__button_functions = kwargs
 
     def set_title(self, titol: str):
         self.__title = titol
@@ -46,27 +58,31 @@ class View(tk.Tk):
         self.mainloop()
 
     def __button_bar(self):
+        """ Instance a button bar for the GUI.
+
+        The GUI of this app is formed by two parts. The first one are a set of element of control.
+        The main part show the image and the histogram. This function creates the control part.
+
+        Returns:
+
+        """
         fr_buttons = tk.Frame(self, relief=tk.RAISED, bd=2)
 
-        functions = self.__functions
+        functions = self.__button_functions
 
-        btn_open = tk.Button(fr_buttons, text="Obrir", command=functions["file_o"])
-        btn_headers = tk.Button(fr_buttons, text="Capceleres", command=functions["header_s"])
-        btn_adv_viewer = tk.Button(fr_buttons, text="Visualitzador avançat",
-                                   command=functions["adv_viewer"])
-        btn_history = tk.Button(fr_buttons, text="Historial", command=functions["history"])
+        buttons = []
+        for name, func in functions:
+            name = name.replace("_", " ")
+            buttons.append(tk.Button(fr_buttons, text=name, command=func))
 
-        variable = tk.StringVar(fr_buttons)
-        variable.set("First")  # default value
+        for values, func in self.__func_selectors:
+            variable = tk.StringVar(fr_buttons)
+            variable.set("First")  # default value
 
-        sel_dims = tk.OptionMenu(fr_buttons, variable, "First", "Second", "Third",
-                                 command=functions["sel_dim"])
+            buttons.append(tk.OptionMenu(fr_buttons, variable, values,  command=func))
 
-        btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        btn_headers.grid(row=1, column=0, sticky="ew", padx=5)
-        btn_adv_viewer.grid(row=2, column=0, sticky="ew", padx=5)
-        btn_history.grid(row=3, column=0, sticky="ew", padx=5)
-        sel_dims.grid(row=4, column=0, sticky="ew", padx=5)
+        for row, b in enumerate(buttons):
+            b.grid(row=row, column=0, sticky="ew", padx=5)
 
         fr_buttons.grid(row=0, column=0, sticky="ns")
 
