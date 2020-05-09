@@ -101,7 +101,7 @@ class DicomImage:
         self.__position = value
 
     def __len__(self):
-        return self.images.shape[2]
+        return self.images.shape[self.__selected_dim]
 
     def __getitem__(self, item):
         """ Magic method to use the class with the interface [item].
@@ -128,6 +128,9 @@ class DicomImage:
                 max_idx = np.argmax(img.shape)
                 min_idx = np.argmin(img.shape)
 
+                if max_idx == min_idx:
+                    min_idx = (min_idx + 1) % len(img.shape)
+
                 rel = img.shape[min_idx] / img.shape[max_idx]
 
                 max_val = self.__max_size[max_idx]
@@ -153,7 +156,7 @@ class DicomImage:
 
         return img
 
-    def get_histogram(self, item: int):
+    def get_histogram(self, item: int, dim: int = 0):
         img = self.__get_raw_image(item)
 
         return funcs.get_histogram(img)
@@ -186,8 +189,10 @@ class DicomImage:
 
         return img[y][x]
 
-    def __get_raw_image(self, item):
-        return self.__dicom_file.pixel_array[:, :, item]
+    def __get_raw_image(self, item, dim=None):
+        if dim is None:
+            dim = self.dim
+        return self.__dicom_file.pixel_array.take(indices=item, axis=dim)
 
     @staticmethod
     def __set_zoom(img: np.ndarray, zoom: Num, position: List[int]):

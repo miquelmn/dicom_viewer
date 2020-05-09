@@ -144,6 +144,8 @@ class Controller:
             dim = 2
 
         self.__model.dim = dim
+        self.__view.set_n_images(len(self.__model))
+        self.__depth = min(len(self.__model) - 1, self.__depth)
         self.__update_view_image()
 
     @exist_model
