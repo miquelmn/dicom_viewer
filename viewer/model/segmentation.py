@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Set of function to segment objects
+""" Set of function to segment objects.
 
 """
 
@@ -19,7 +19,7 @@ def build_marker(markers: List[Tuple[int, int]], radius: int, img_size: Tuple[in
     Returns:
 
     """
-    markers_img = np.zeros(img_size, dtype=np.uint8)
+    markers_img = np.zeros(img_size, dtype=np.int32)
 
     for idx, m in enumerate(markers):
         markers_img[m[0] - radius: m[0] + radius, m[1] - radius: m[1] + radius] = idx + 1
@@ -27,7 +27,7 @@ def build_marker(markers: List[Tuple[int, int]], radius: int, img_size: Tuple[in
     return markers_img
 
 
-def apply_watershed(markers: np.ndarray, image: np.ndarray):
+def apply_watershed(markers: np.ndarray, image: np.ndarray) -> np.ndarray:
     """ Applies watershed with markers.
 
     Args:
@@ -37,10 +37,12 @@ def apply_watershed(markers: np.ndarray, image: np.ndarray):
     Returns:
 
     """
-    if len(image.shape) != 3 or len(markers.shape) != 2:
+    if len(markers.shape) != 2:
         raise Exception(
-            "Watershed can not been applied to these images shapes: Image("
-            + str(image.shape) + ") " "Markers(" + str(markers.shape) + ")")
+            "Watershed markers should be a 1D image get (" + str(markers.shape) + ") size")
+
+    if len(image.shape) == 2:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
     mask = cv2.watershed(image, markers)
 
