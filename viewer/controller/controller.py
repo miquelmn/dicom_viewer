@@ -1,16 +1,23 @@
-from viewer.view import tktable, gui
-from tkinter.filedialog import askopenfilename
-from viewer.model.dicom_files import DicomImage
-from tkinter import messagebox
-import numpy as np
+# -*- coding: utf-8 -*-
+""" Controller of the MVC pattern.
+
+This modules is the one that connects the model (model.DicomImage) with the View (view.GUI). Most of
+the functions that contains this module are event handler detected on the GUI class.
+
+
+"""
 import math
-from matplotlib import pyplot as plt
 from typing import List
 import time
-import pandas as pd
 import pkg_resources
 import os
-
+from tkinter.filedialog import askopenfilename
+from tkinter import messagebox
+import numpy as np
+from matplotlib import pyplot as plt
+import pandas as pd
+from viewer.view import tktable, gui
+from viewer.model.dicom_files import DicomImage
 
 def exist_model(func):
     def wrapper(controller, *args):
@@ -99,12 +106,30 @@ class Controller:
     @exist_model
     @save_actions
     def watershed(self):
+        """ Applies the watershed algorithm to the model image.
+
+        This function uses the watershed algorithm with initial markers. The markers should already
+        be set when this function is called. If the markers are not set a message box is shown to
+        the user.
+
+        Once the watershed is applied from each region a set of texture features is extracted.
+
+        TODO:
+            Show the texture information of each regions natively.
+
+        Returns:
+
+        """
+
         if self.__flag_watershed and not self.__markers:
             messagebox.showerror("Error", "No has seleccionat marcadors inicials")
         elif self.__flag_watershed:
             mask = self.__model.apply_watershed(self.__depth, self.__markers)
             plt.imshow(mask)
             plt.show()
+            self.__model.get_texture_features(mask, self.__depth)
+
+
         self.__markers = []
         self.__flag_watershed = not self.__flag_watershed
 

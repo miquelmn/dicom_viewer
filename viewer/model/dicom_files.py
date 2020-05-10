@@ -4,14 +4,18 @@
 This model contains the information of each the images to visualize. The main focus of this class
 is a set of transformations to the data.
 
+TODO:
+    Instead of showing through matplotlib save it to a variable.
 """
 
+import random
 from typing import List, Union, Tuple
 from pydicom.filereader import dcmread
 import numpy as np
 import cv2
 from viewer.common import functions as funcs
-from . import segmentation
+from . import segmentation, texture_features
+from matplotlib import pyplot as plt
 
 Num = Union[int, float]
 
@@ -52,13 +56,34 @@ class DicomImage:
         """
         img = self[item]
 
-        img = ((img - img.min()) / (img.max() - img.min()))*255
+        img = ((img - img.min()) / (img.max() - img.min())) * 255
         img = img.astype(np.uint8)
 
         markers = segmentation.build_marker(markers, radius=10, img_size=img.shape)
         mask = segmentation.apply_watershed(markers, img)
 
         return mask
+
+    def get_texture_features(self, regions: np.ndarray, item: int):
+        """ Gets texture features of the image item.
+
+        Args:
+            regions:
+            item:
+
+        Returns:
+
+        """
+        img = self[item]
+        kernels = texture_features.create_filter_bank()
+        kernels = random.sample(kernels, k=1)
+        res = texture_features.apply_filters_region_img(regions, img, kernels)
+
+        for r, textures in res.items():
+            plt.figure()
+            plt.title("Regions " + str(r))
+            plt.imshow(textures[0])
+        plt.show()
 
     @property
     def images(self) -> np.ndarray:
