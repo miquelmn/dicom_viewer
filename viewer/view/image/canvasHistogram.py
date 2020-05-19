@@ -1,3 +1,8 @@
+""" Graphical component to show the histogram in the GUI.
+
+An histogram is a representation discrete representation of an image.
+
+"""
 from viewer.view.image import canvasimage
 import numpy as np
 
@@ -29,19 +34,24 @@ class CanvasHistogram(canvasimage.CanvasImage):
         canvas = self._canvas
         bbox = canvas.bbox(self._image_on_canvas)
 
+        max_line = canvas.create_line(bbox[2] - 10, bbox[1], bbox[2] - 10, bbox[3])
         min_line = canvas.create_line(bbox[0], bbox[1], bbox[0], bbox[3])
-        max_line = canvas.create_line(bbox[2] -10, bbox[1], bbox[2] - 10, bbox[3])
 
-        self.__min_line = min_line
         self.__max_line = max_line
+        self.__min_line = min_line
 
     def _reset_local_gui(self):
         self.reset_lines()
 
     def reset_lines(self):
+        """ Reset control lines to the initial position.
+
+        Returns:
+
+        """
         bbox = np.array(self._canvas.bbox(self._image_on_canvas))
 
-        self._canvas.coords(self.__max_line, bbox[2], bbox[1], bbox[2], bbox[3] - 1)
+        self._canvas.coords(self.__max_line, bbox[2] - 10, bbox[1], bbox[2] - 10, bbox[3] - 1)
         self._canvas.coords(self.__min_line, bbox[0], bbox[1], bbox[0], bbox[3] - 1)
 
     def lines_bb(self):
@@ -83,5 +93,3 @@ class CanvasHistogram(canvasimage.CanvasImage):
         if ((not back) and (pos_line[0] + velocity) < maximum) or (
                 back and (pos_line[0] + -1 * velocity) > minimum):
             self._canvas.move(line, direction * velocity, 0)
-
-

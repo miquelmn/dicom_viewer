@@ -3,14 +3,24 @@
 
 The view of the apps is fully defined in this module. The view is made with the library tkinter
 
-Class:
+Classes:
     View (tkinter.Tk). Class containing the main window.
+    ImageContId (enum). Enum to identify wich of the two imageContainer use.
 
 """
 
 import tkinter as tk
+from enum import Enum
 import numpy as np
 from viewer.view.image import imageContainer
+
+
+class ImageContID(Enum):
+    """ Interface to known wich container a function threads.
+
+    """
+    principal = 0
+    secondary = 1
 
 
 class View(tk.Tk):
@@ -19,7 +29,10 @@ class View(tk.Tk):
         super().__init__()
 
         self.__title = title
-        self.__image_container = imageContainer.ContainerImage(self, relief=tk.RAISED, bd=2)
+        self.__image_first = imageContainer.ContainerImage(self, histogram=True, relief=tk.RAISED,
+                                                           bd=2)
+        self.__image_second = imageContainer.ContainerImage(self, histogram=False, relief=tk.RAISED,
+                                                            bd=2)
         self.__button_functions = {}
         self.__func_selectors = []
 
@@ -28,12 +41,36 @@ class View(tk.Tk):
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
                       distance, sel_dim, **kwargs):
-        self.__image_container.set_functions(movements, depth, zoom, histogram, histogram_release,
-                                             pixel_value, distance)
+        """ Set listeners for the events handled
+
+        Args:
+            movements:
+            depth:
+            zoom:
+            histogram:
+            histogram_release:
+            pixel_value:
+            distance:
+            sel_dim:
+            **kwargs:
+
+        Returns:
+
+        """
+        self.__image_first.set_functions(movements, depth, zoom, histogram, histogram_release,
+                                         pixel_value, distance)
         self.__func_selectors = [sel_dim]
         self.__button_functions = kwargs
 
     def set_title(self, titol: str):
+        """ Set the window title.
+
+        Args:
+            titol:
+
+        Returns:
+
+        """
         self.__title = titol
 
     @property
@@ -52,8 +89,11 @@ class View(tk.Tk):
 
         self.__button_bar()
 
-        self.__image_container.draw()
-        self.__image_container.grid(row=0, column=1, columnspan=3, sticky="nswe")
+        self.__image_first.draw()
+        self.__image_first.grid(row=0, column=1, columnspan=1, sticky="nswe")
+
+        self.__image_second.draw()
+        self.__image_second.grid(row=0, column=2, columnspan=1, sticky="nswe")
 
         self.mainloop()
 
@@ -88,30 +128,66 @@ class View(tk.Tk):
 
         self.__fr_button = fr_buttons
 
-    def show_image(self, img, histogram: np.ndarray = None):
-        self.__image_container.update_image(img, histogram)
+    def show_image(self, img, histogram: np.ndarray = None,
+                   img_container: ImageContID = ImageContID.principal):
+        """ Show a numpy array into the GUI.
 
-    def set_n_images(self, value: int):
-        self.__image_container.set_n_images(value)
+        Args:
+            img:
+            histogram:
+            img_container:
+
+        Returns:
+
+        """
+        if img_container is ImageContID.secondary:
+            self.__image_second.update_image(img)
+        else:
+            self.__image_first.update_image(img, histogram)
+
+    def set_max_depth(self, max_depth: int, img_container: ImageContID = ImageContID.principal):
+        """ Set max depth for the image containers.
+
+        The image containers has the ability to move through multiples axis of 3D image. This
+        function set the maximum value of this movement.
+
+        Args:
+            max_depth (int):
+            img_container (ImageContID):
+        """
+
+        if img_container is ImageContID.secondary:
+            image = self.__image_second
+        else:
+            image = self.__image_first
+
+        image.set_n_images(max_depth)
 
     def move_line(self, id_line: int, front: bool, velocity: int):
-        self.__image_container.move_histogram_line(id_line, front, velocity)
+        self.__image_first.move_histogram_line(id_line, front, velocity)
 
     def lines_position(self):
-        return self.__image_container.lines_position()
+        return self.__image_first.lines_position()
 
     def get_histogram_position(self):
-        return self.__image_container.get_histogram_position()
+        return self.__image_first.get_histogram_position()
 
     def get_image_position(self):
-        return self.__image_container.get_image_position()
+        return self.__image_first.get_image_position()
 
     def set_pixel_text(self, value: str):
-        self.__image_container.set_text_value(value)
+        self.__image_first.set_text_value(value)
 
     def set_distance_text(self, value: str):
-        self.__image_container.set_distance_value(value)
+        self.__image_first.set_distance_value(value)
 
     @property
     def img_space(self):
-        return self.__image_container.img_space
+        return self.__image_first.img_space
+
+    @property
+    def depth(self):
+        if self.__image_second is None:
+            return self.__image_first.depth
+        else:
+            return self.__image_first.depth, self.__image_second.depth

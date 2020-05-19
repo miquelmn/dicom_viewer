@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+""" Tkinter frame to contain an image.
+
+"""
 from typing import List
 import tkinter as tk
 from . import canvasHistogram, canvasimage
@@ -8,15 +12,19 @@ class ContainerImage(tk.Frame):
     __pixel_value_fixed = "Valor de píxel: "
     __distance_value_fixed = " Distància: "
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, histogram=True, **kwargs):
         super().__init__(parent, **kwargs)
 
-        # self.__functions = None
-        space = (600, 400)
-        self.__img_size = space
-        self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0, size=space)
-        self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=2, column=0,
-                                                                  size=(680, 480))
+        self.__img_size = (400, 400)
+        self.__canvas_image = canvasimage.CanvasImage(parent=self, row=0, column=0,
+                                                      size=self.__img_size)
+
+        if histogram:
+            self.__canvas_histogram = canvasHistogram.CanvasHistogram(parent=self, row=2, column=0,
+                                                                      size=self.__img_size)
+        else:
+            self.__canvas_histogram = None
+
         self.__n_images = 1
         self.__scale_depth = None
         self.__scale_zoom = None
@@ -28,13 +36,48 @@ class ContainerImage(tk.Frame):
         self.__f_depth = None
         self.__f_zoom = None
 
+    @property
+    def depth(self):
+        """ Returns the selected depth of the GUI.
+
+        Returns:
+
+        """
+        dep = 0
+        if self.__scale_depth is not None:
+            dep = self.__scale_depth.get()
+
+        return dep
+
     def set_n_images(self, value: int):
+        """ Sets maximum depth of 3D image.
+
+        Args:
+            value:
+
+        Returns:
+
+        """
         self.__n_images = value
         if self.__scale_depth is not None:
             self.__scale_depth.configure(to=value)
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
                       distance):
+        """ Set the listener of the events.
+
+        Args:
+            movements:
+            depth:
+            zoom:
+            histogram:
+            histogram_release:
+            pixel_value:
+            distance:
+
+        Returns:
+
+        """
         self.__canvas_image.set_function(
             {"<Button-1>": movements[0], "<ButtonRelease-1>": movements[1],
              pixel_value[0]: pixel_value[1], distance[0]: distance[1]})
@@ -60,7 +103,9 @@ class ContainerImage(tk.Frame):
         frame_img.grid(row=0, column=1, sticky="nsew")
 
         self.__canvas_image.draw()
-        self.__canvas_histogram.draw()
+
+        if self.__canvas_histogram is not None:
+            self.__canvas_histogram.draw()
 
     @property
     def img_space(self):

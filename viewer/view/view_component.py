@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import abc
 from PIL import Image, ImageTk
 import numpy as np
@@ -7,7 +9,7 @@ from typing import Tuple
 class VComponent(abc.ABC):
 
     def __init__(self, row: int, column: int, size: Tuple[int, int]):
-        self._functions = None
+        self._functions = {}
         self._row = row
         self._column = column
         self._width = size[0]

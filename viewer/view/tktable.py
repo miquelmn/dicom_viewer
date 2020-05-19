@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# pylint: disable-all
+"""
+
+"""
+
 from tkinter import *
 from tkinter.ttk import *
 
