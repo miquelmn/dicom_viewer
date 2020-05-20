@@ -364,7 +364,7 @@ class DicomImage:
         Returns:
 
         """
-        img = self.get_img(z, flag_contrast=False, flag_zoom=True)
+        img = self.get_img(z, flag_contrast=False, flag_zoom=True, dim=self.__selected_dim)
 
         return img[y][x]
 
