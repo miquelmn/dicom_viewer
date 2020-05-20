@@ -9,14 +9,16 @@ TODO:
 """
 
 import random
+import glob
+import os
 from typing import List, Union, Tuple
-from pydicom.filereader import dcmread
 import numpy as np
 import cv2
-from . import segmentation, texture_features
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+from pydicom.filereader import dcmread
+from . import segmentation, texture_features
 
 Num = Union[int, float]
 
@@ -49,6 +51,66 @@ def img_2_histogram(img: np.ndarray, size: Tuple[int, int], dpi: int = 96):
     return histogram
 
 
+class DicomFolder:
+    """ Class to wrap a folder of images.
+
+    """
+
+    def __init__(self, path: str):
+        self.__headers = {}
+        self.__tensor = np.zeros((0, 0))
+
+        self.__load_folder(path)
+
+    def __load_folder(self, path: str):
+        """ Load a dicom folder into the object.
+
+        A folder of dicom files is a set of files dicom in a directory. This files are, in the
+        correct order a depth image. Each of these files should share the same headers.
+
+        Args:
+            path (str):
+
+        Returns:
+
+        """
+        files = glob.glob(os.path.join(path, "*.dcm"))
+        files = sorted(files, key=lambda x: int(x.split(os.path.sep)[-1].split(".")[0]),
+                       reverse=False)
+        tensor = []
+
+        img = {}
+        for filename in files:
+            img = dcmread(filename)
+            tensor.append(img.pixel_array)
+
+        if tensor:
+            tensor = np.dstack(tensor)
+            headers = img
+
+        self.__headers = headers
+        self.__tensor = tensor
+
+    @property
+    def pixel_array(self) -> np.ndarray:
+        """ Returns the tensor that defines the 3D image.
+
+        Returns:
+
+        """
+        return self.__tensor
+
+    def items(self):
+        """ Analog to a dictionary function.
+
+        Wraps the headers function
+
+        Returns:
+
+        """
+        return self.__headers.items()
+
+
 class DicomImage:
     """
     Wrapper class for the pydicom library.
@@ -59,7 +121,10 @@ class DicomImage:
 
     def __init__(self, path: str, max_size: List[Num] = None):
         self.__path = path
-        self.__dicom_file = dcmread(path)
+        if os.path.isdir(path):
+            self.__dicom_file = DicomFolder(path)
+        else:
+            self.__dicom_file = dcmread(path)
         self.__zoom_factor = 1
         self.__position = [0, 0]
 

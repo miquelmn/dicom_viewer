@@ -9,7 +9,7 @@ the functions that contains this module are event handler detected on the GUI cl
 import math
 from typing import List
 import time
-from tkinter.filedialog import askopenfilename
+from tkinter import filedialog
 import os
 from tkinter import messagebox
 import pkg_resources
@@ -102,7 +102,9 @@ class Controller:
                                   distance=('<Button-3>', self.calc_distance),
                                   sel_dim=(["First", "Second", "Third"], self.change_dim),
                                   Visualitzador_avançat=self.show_adv_image,
-                                  Obrir=lambda: self.__open_file(gui.ImageContID.principal),
+                                  Obrir_fitxer=lambda: self.__open_file(gui.ImageContID.principal),
+                                  Obrir_carpeta=lambda: self.__open_file(gui.ImageContID.principal,
+                                                                         False),
                                   Capceleres=self.show_headers,
                                   Historial=self.show_history, Watershed=self.watershed,
                                   Second_image=lambda: self.__open_file(gui.ImageContID.secondary),
@@ -217,7 +219,7 @@ class Controller:
         self.__flag_watershed = not self.__flag_watershed
 
     @save_actions
-    def __open_file(self, img_container: gui.ImageContID):
+    def __open_file(self, img_container: gui.ImageContID, file: bool = True):
         """ Load and show Dicom image into the gui
 
         Args:
@@ -226,9 +228,11 @@ class Controller:
         Returns:
 
         """
-        filepath = askopenfilename(
-            filetypes=[("Dicom files", "*.dcm")]
-        )
+        if file:
+            filepath = filedialog.askopenfilename(initialdir="~",
+                                                  filetypes=[("Dicom files", "*.dcm")])
+        else:
+            filepath = filedialog.askdirectory(initialdir="~")
 
         if filepath:
             image = DicomImage(filepath, self.__view.img_space)
