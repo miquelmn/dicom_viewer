@@ -9,17 +9,27 @@ the functions that contains this module are event handler detected on the GUI cl
 import math
 from typing import List
 import time
-import pkg_resources
-import os
 from tkinter.filedialog import askopenfilename
+import os
 from tkinter import messagebox
+import pkg_resources
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from viewer.view import tktable, gui
 from viewer.model.dicom_files import DicomImage
 
+
 def exist_model(func):
+    """ Decorator, check if the model is already loaded.
+
+    Args:
+        func:
+
+    Returns:
+
+    """
+
     def wrapper(controller, *args):
         if controller.is_model():
             func(controller, *args)
@@ -30,13 +40,21 @@ def exist_model(func):
 
 
 def save_actions(func):
+    """ Decorator, saves the actions made to a history
+
+    Args:
+        func:
+
+    Returns:
+
+    """
     name = func.__name__
 
     def wrapper(controller, *args):
         date = time.strftime("%H:%M:%S")
         str_args = ""
-        for a in args:
-            str_args += str(a)
+        for arg in args:
+            str_args += str(arg)
         row = [date, name, str_args]
         controller.add_2_history(row)
         func(controller, *args)
@@ -44,10 +62,15 @@ def save_actions(func):
     return wrapper
 
 
-LOOKUP = None
+LOOKUP = []
 
 
 def load_lookup():
+    """ Load into the global variable the lookup table for the header.
+
+    Returns:
+
+    """
     global LOOKUP
 
     if LOOKUP is None:
@@ -56,28 +79,34 @@ def load_lookup():
             os.path.join(os.pardir, 'resources', 'lookup.ods')
         )
 
-        df = pd.read_excel(path, engine="odf")
-        df = df[["Tag", "Name"]]
-        LOOKUP = df.set_index('Tag').T.to_dict('list')
+        data_frame = pd.read_excel(path, engine="odf")
+        data_frame = data_frame[["Tag", "Name"]]
+        LOOKUP = data_frame.set_index('Tag').T.to_dict('list')
 
 
 class Controller:
+    """ Controller of the MVC design pattern
+
+    """
 
     def __init__(self, view: gui.View):
         self.__view = view
-        self.__model = None
-        self.__depth = 0
+        self.__img_reference = None
+        self.__img_input = None
 
-        self.__view.set_functions(movements=[self.initial_movement, self.movement],
-                                  depth=self.change_depth, zoom=self.change_zoom,
+        self.__view.set_functions(movements=[self.left_click, self.movement],
+                                  depth=self.update_view_image, zoom=self.change_zoom,
                                   histogram=self.histogram_movement,
                                   histogram_release=self.move_histogram,
                                   pixel_value=('<Motion>', self.position_value),
                                   distance=('<Button-3>', self.calc_distance),
                                   sel_dim=(["First", "Second", "Third"], self.change_dim),
                                   Visualitzador_avançat=self.show_adv_image,
-                                  Obrir=self.open_file, Capceleres=self.show_headers,
-                                  Historial=self.show_history, Watershed=self.watershed)
+                                  Obrir=lambda: self.__open_file(gui.ImageContID.principal),
+                                  Capceleres=self.show_headers,
+                                  Historial=self.show_history, Watershed=self.watershed,
+                                  Second_image=lambda: self.__open_file(gui.ImageContID.secondary),
+                                  Corregister=self.start_corregistration)
 
         self.__position_first = None
 
@@ -91,17 +120,71 @@ class Controller:
         self.__markers = []
 
     def add_2_history(self, row):
+        """ Add new element to history.
+
+        A history of actions is a set of ordered actions done by the user. This function adds a new
+        action to this history.
+
+        Args:
+            row:
+
+        Returns:
+
+        """
         self.__history.append(row)
+
+    @property
+    def depth(self):
+        """ Returns the actual depth selected
+
+        Returns:
+
+        """
+        depth = self.__view.depth
+
+        if isinstance(depth, tuple):
+            depth = depth[0]
+
+        return depth
+
+    @property
+    def reference_depth(self):
+        """ Depth of the reference image.
+
+        Returns:
+
+        """
+        depth = self.__view.depth
+
+        if not isinstance(depth, list):
+            return -1
+
+        return depth[1]
+
+    @exist_model
+    def start_corregistration(self):
+        """ Start corregistration between model 1 and 2
+
+        Returns:
+
+        """
+
+        pass
 
     @exist_model
     @save_actions
     def show_adv_image(self):
+        """ Show the actual image with Matplotlib.
+
+        Returns:
+            None
+        """
         plt.figure()
-        plt.imshow(self.__model[self.__depth])
+        plt.imshow(self.__img_reference[self.depth])
         plt.show()
 
     def is_model(self) -> bool:
-        return self.__model is not None
+        return self.__img_reference is not None
 
     @exist_model
     @save_actions
@@ -114,9 +197,6 @@ class Controller:
 
         Once the watershed is applied from each region a set of texture features is extracted.
 
-        TODO:
-            Show the texture information of each regions natively.
-
         Returns:
 
         """
@@ -124,34 +204,57 @@ class Controller:
         if self.__flag_watershed and not self.__markers:
             messagebox.showerror("Error", "No has seleccionat marcadors inicials")
         elif self.__flag_watershed:
-            mask = self.__model.apply_watershed(self.__depth, self.__markers)
-            plt.imshow(mask)
-            plt.show()
-            self.__model.get_texture_features(mask, self.__depth)
+            mask = self.__img_reference.apply_watershed(self.depth, self.__markers)
+            mask[mask == -1] = 0
+            mask = mask.astype(float)
+            mask = mask / mask.max()
+            mask = mask * 255
 
+            self.__view.show_image(mask, img_container=gui.ImageContID.secondary)
+            self.__view.set_text("Prova 1 \nProva 2")
 
         self.__markers = []
         self.__flag_watershed = not self.__flag_watershed
 
     @save_actions
-    def open_file(self):
-        """Open a file for editing."""
+    def __open_file(self, img_container: gui.ImageContID):
+        """ Load and show Dicom image into the gui
+
+        Args:
+            img_container (gui.ImageContID) : Identifier to the container to thread.
+
+        Returns:
+
+        """
         filepath = askopenfilename(
             filetypes=[("Dicom files", "*.dcm")]
         )
+
         if filepath:
-            self.__model = DicomImage(filepath, self.__view.img_space)
-            self.__view.show_image(self.__model[0], histogram=self.__model.get_histogram(0))
-            self.__view.set_n_images(len(self.__model))
-        self.__view.title(f"DICOM Reader - {filepath}")
+            image = DicomImage(filepath, self.__view.img_space)
+            if img_container is gui.ImageContID.principal:
+                histogram = image.get_histogram(0)
+                self.__img_reference = image
+            else:
+                histogram = None
+                self.__img_input = image
+
+            self.__view.show_image(image[0], img_container=img_container, histogram=histogram)
+            self.__view.set_max_depth(len(image) - 1)
+            self.__view.title(f"DICOM Reader - {filepath}")
 
     @exist_model
     @save_actions
     def show_headers(self):
+        """ Handler to show the headers of the Dicom-File
+
+        Returns:
+
+        """
         global LOOKUP
         dades = []
 
-        for h, v in self.__model.get_header():
+        for h, v in self.__img_reference.get_header():
             str_v = str(v)
             str_h = str(h).replace(" ", "")
             if hasattr(v, 'length'):
@@ -163,27 +266,41 @@ class Controller:
         tktable.make_table("Capceleres", dades, ["Clau", "Valor"])
 
     def show_history(self):
+        """ Handler. Shows the history of action to the user.
+
+        Returns:
+
+        """
         tktable.make_table("History", self.__history, ["Temps", "Funció", 'Parametres'])
 
     @exist_model
     @save_actions
-    def change_depth(self, value):
-        depth = int(value) // 2
-        self.__depth = depth
-
-        self.__update_view_image(update_histogram=True)
-
-    @exist_model
-    @save_actions
     def change_zoom(self, value):
+        """ Handler. Change the zoom of the image.
+
+        Args:
+            value:
+
+        Returns:
+
+        """
         zoom = int(value)
 
-        self.__model.resize_factor = zoom
-        self.__update_view_image()
+        self.__img_reference.resize_factor = zoom
+        self.update_view_image()
 
     @exist_model
     @save_actions
-    def change_dim(self, value):
+    def change_dim(self, value, img_container: gui.ImageContID = gui.ImageContID.principal):
+        """ Change the 3D point of view of the visualization.
+
+        Args:
+            value:
+            img_container:
+
+        Returns:
+
+        """
         dim = 0
         if value == "First":
             dim = 0
@@ -192,13 +309,25 @@ class Controller:
         elif value == "Third":
             dim = 2
 
-        self.__model.dim = dim
-        self.__view.set_n_images(len(self.__model))
-        self.__depth = min(len(self.__model) - 1, self.__depth)
-        self.__update_view_image()
+        if img_container is gui.ImageContID.secondary:
+            image = self.__img_input
+        else:
+            image = self.__img_reference
+
+        image.dim = dim
+        self.__view.set_max_depth(len(self.__img_reference) - 1, img_container)
+        self.update_view_image()
 
     @exist_model
-    def initial_movement(self, event):
+    def left_click(self, event):
+        """ Handler. Handles the click of the principal mouse button.
+
+        Args:
+            event:
+
+        Returns:
+
+        """
         if self.__flag_watershed:
             self.__markers.append((event.y, event.x))
         else:
@@ -215,8 +344,8 @@ class Controller:
 
             self.__position_first = None
 
-            self.__model.move_image(old_position - position)
-            self.__update_view_image()
+            self.__img_reference.move_image(old_position - position)
+            self.update_view_image()
 
     @exist_model
     def histogram_movement(self, event):
@@ -241,6 +370,14 @@ class Controller:
     @exist_model
     @save_actions
     def move_histogram(self, event):
+        """ Handler of the movement of the line on the histogram.
+
+        Args:
+            event:
+
+        Returns:
+
+        """
         self.__selected_line = None
         self.__h_last_mouse_pos = None
 
@@ -248,8 +385,8 @@ class Controller:
         width = histogram_bbox[2] - histogram_bbox[0]
 
         horizontal_pos = [min((line[0] / width), 1) for line in self.__view.lines_position()]
-        self.__model.contrast = horizontal_pos
-        self.__update_view_image()
+        self.__img_reference.contrast = horizontal_pos
+        self.update_view_image()
 
     def __nearest_line(self, position: np.ndarray):
         lines_pos = self.__view.lines_position()
@@ -266,14 +403,31 @@ class Controller:
         return min_idx, min_dist
 
     def position_value(self, event):
+        """ Get the value of the pixel located under the mouse
+
+        Args:
+            event:
+
+        Returns:
+
+        """
         img_coordinates = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
         if img_coordinates is not None:
             self.__view.set_pixel_text(
-                str(self.__model.get_pixel(img_coordinates[0], img_coordinates[1], self.__depth)))
+                str(self.__img_reference.get_voxel(img_coordinates[0], img_coordinates[1],
+                                                   self.depth)))
 
     @exist_model
     @save_actions
     def calc_distance(self, event):
+        """ Calculate distance between two points.
+
+        Args:
+            event:
+
+        Returns:
+
+        """
         previous_point = self.__distance_selected_point
         actual_point = self.__gui_coordinates_2_img_coordinates([event.x, event.y])
         distance = None
@@ -284,7 +438,7 @@ class Controller:
             actual_point = np.array(actual_point)
             previous_point = np.array(previous_point)
 
-            distance = self.__model.get_distance(actual_point, previous_point)
+            distance = self.__img_reference.get_distance(actual_point, previous_point)
         elif actual_point is not None:
             self.__distance_selected_point = actual_point
 
@@ -292,8 +446,11 @@ class Controller:
             self.__view.set_distance_text(str(distance))
 
     def __gui_coordinates_2_img_coordinates(self, gui_coordinates: List[int]):
-        """
-        Converts GUI coordinates to img coordinates.
+        """ Converts GUI coordinates to img coordinates.
+
+        The GUI coordinates has its reference point from the origin (top, left) of the window. To
+        get the correspondence between that coordinates and the image ones we should substract the
+        position of the image.
 
         Args:
             gui_coordinates (List[int]):
@@ -311,13 +468,18 @@ class Controller:
 
         return img_coordinates
 
-    def __update_view_image(self, update_histogram=False):
-        depth = self.__depth
+    def update_view_image(self, value=None):
+        """ Update the image from the view.
 
-        histogram = self.__model.get_histogram(depth)
+        Returns:
 
-        if self.__model is not None and depth < len(self.__model):
-            self.__view.show_image(self.__model[depth], histogram)
+        """
+        depth = self.depth
+
+        histogram = self.__img_reference.get_histogram(depth)
+
+        if self.__img_reference is not None and depth < len(self.__img_reference):
+            self.__view.show_image(self.__img_reference[depth], histogram)
 
     def start(self):
         load_lookup()
