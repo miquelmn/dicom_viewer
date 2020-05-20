@@ -13,11 +13,40 @@ from typing import List, Union, Tuple
 from pydicom.filereader import dcmread
 import numpy as np
 import cv2
-from viewer.common import functions as funcs
 from . import segmentation, texture_features
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 Num = Union[int, float]
+
+
+def img_2_histogram(img: np.ndarray, size: Tuple[int, int], dpi: int = 96):
+    """ Extract histogram from an image.
+
+    Args:
+        img:
+        size:
+        dpi:
+
+    Returns:
+
+    """
+    width, height = size
+    fig = Figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    canvas = FigureCanvas(fig)
+    ax = fig.gca()
+    ax.axis('off')
+    fig.tight_layout(pad=0)
+
+    ax.hist(img.ravel())
+    canvas.draw()
+
+    histogram = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+
+    histogram = histogram.reshape((height, width, -1))
+
+    return histogram
 
 
 class DicomImage:
@@ -99,7 +128,16 @@ class DicomImage:
         return self.__selected_dim
 
     @dim.setter
-    def dim(self, value):
+    def dim(self, value: int):
+        """ Selects which dimension to return.
+
+        Args:
+            value (int): Integer of the dimension.
+
+        Returns:
+
+        """
+        self.__reduced_size = None
         self.__selected_dim = value
 
     def set_max_size(self, size):
@@ -164,6 +202,17 @@ class DicomImage:
 
     def get_img(self, item, flag_contrast: bool = True, flag_zoom: bool = True,
                 dim: int = 0):
+        """ Get the cut of the image passed as parameter
+
+        Args:
+            item:
+            flag_contrast:
+            flag_zoom:
+            dim:
+
+        Returns:
+
+        """
         img = self.__get_raw_image(item, dim)
 
         size = None
@@ -188,7 +237,7 @@ class DicomImage:
                 size[max_idx] = max_val
                 size[min_idx] = min_val
 
-                size = tuple(size[::-1])
+                size = tuple(size)
                 self.__reduced_size = size
         else:
             size = self.__reduced_size
@@ -203,10 +252,18 @@ class DicomImage:
 
         return img
 
-    def get_histogram(self, item: int, dim: int = 0):
+    def get_histogram(self, item: int):
+        """ Get the histogram of the cut in the depth passed as parameter.
+
+        Args:
+            item:
+
+        Returns:
+
+        """
         img = self.__get_raw_image(item)
 
-        return funcs.get_histogram(img)
+        return img_2_histogram(img, size=self.__max_size)
 
     def get_distance(self, point_1, point_2) -> float:
         """ Calculate the distance between two points.
@@ -231,7 +288,17 @@ class DicomImage:
 
         return distance
 
-    def get_pixel(self, x, y, z):
+    def get_voxel(self, x, y, z):
+        """ Get the value of the voxel (x,y,z)
+
+        Args:
+            x:
+            y:
+            z:
+
+        Returns:
+
+        """
         img = self.get_img(z, flag_contrast=False, flag_zoom=True)
 
         return img[y][x]
@@ -258,7 +325,8 @@ class DicomImage:
         Returns:
 
         """
-        assert zoom > 1
+        if zoom < 1:
+            raise Exception("Zoom to be applied should be higher or equal than 1")
 
         original_size = np.array(img.shape)
         new_size = original_size * zoom
@@ -278,7 +346,7 @@ class DicomImage:
     def __set_contrast(img: np.ndarray, contrast: List[Num]):
         """ Change the contrast of the image.
 
-        The contrast of an image can be set through a numericall transformation.
+        The contrast of an image can be set through a numerical transformation.
 
         Args:
             img:
@@ -329,6 +397,5 @@ class DicomImage:
     def move_image(self, differential):
         self.position += differential[::-1] // 2
 
-    @staticmethod
-    def corregister(img1, img2):
+    def corregister(self, input_img):
         pass
