@@ -143,3 +143,11 @@ class ContainerImage(tk.Frame):
     def __get_label_text(self) -> str:
         return self.__pixel_value_fixed + self.__pixel_value + self.__distance_value_fixed + \
                self.__distance_value
+
+    def set_text(self, text):
+        """ Method to modify the raw string on the label.
+
+        Returns:
+
+        """
+        self.__label_pixel["text"] = text

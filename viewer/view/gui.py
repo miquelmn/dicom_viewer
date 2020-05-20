@@ -163,6 +163,17 @@ class View(tk.Tk):
 
         image.set_n_images(max_depth)
 
+    def set_text(self, text):
+        """ Change label value of the secondary image.
+
+        Args:
+            text:
+
+        Returns:
+
+        """
+        self.__image_second.set_text(text)
+
     def move_line(self, id_line: int, front: bool, velocity: int):
         self.__image_first.move_histogram_line(id_line, front, velocity)
 
