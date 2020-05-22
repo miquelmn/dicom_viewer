@@ -120,6 +120,7 @@ class Controller:
         self.__history = []
         self.__flag_watershed = False
         self.__markers = []
+        self.__mask = None
 
     def add_2_history(self, row):
         """ Add new element to history.
@@ -212,7 +213,7 @@ class Controller:
             mask = mask / mask.max()
             mask = mask * 255
 
-            self.__view.show_image(mask, img_container=gui.ImageContID.secondary)
+            self.__mask = mask
             self.__view.set_text("Prova 1 \nProva 2")
 
         self.__markers = []
@@ -333,7 +334,17 @@ class Controller:
 
         """
         if self.__flag_watershed:
-            self.__markers.append((event.y, event.x))
+            coordinates = [0, 0, 0]
+            not_used = [0, 1, 2]
+            dim = self.__img_reference.dim
+
+            coordinates[dim] = self.depth
+            del not_used[dim]
+
+            coordinates[min(not_used)] = event.y
+            coordinates[max(not_used)] = event.x
+
+            self.__markers.append(tuple(coordinates))
         else:
             self.__position_first = np.array([event.x, event.y])
 
@@ -484,6 +495,16 @@ class Controller:
 
         if self.__img_reference is not None and depth < len(self.__img_reference):
             self.__view.show_image(self.__img_reference[depth], histogram)
+
+        if self.__mask is not None and depth < len(self.__img_reference):
+            self.__view.show_image(self.get_mask(depth), img_container=gui.ImageContID.secondary)
+        elif self.__mask is None and self.__img_input is not None:
+            self.__view.show_image(self.__img_input[depth], img_container=gui.ImageContID.secondary)
+
+    def get_mask(self, item: int):
+        dim = self.__img_reference.dim
+
+        return self.__mask.take(indices=item, axis=dim)
 
     def start(self):
         load_lookup()

@@ -137,7 +137,7 @@ class DicomImage:
         self.__reduced_size = None
         self.__selected_dim = 0
 
-    def apply_watershed(self, item, markers: List[Tuple[int, int]]) -> np.ndarray:
+    def apply_watershed(self, depth, markers: List[Tuple[int, int, int]]) -> np.ndarray:
         """ Applies watershed algorithm with markers.
 
 
@@ -148,7 +148,7 @@ class DicomImage:
         Returns:
 
         """
-        img = self[item]
+        img = self.images
 
         img = ((img - img.min()) / (img.max() - img.min())) * 255
         img = img.astype(np.uint8)
@@ -158,26 +158,26 @@ class DicomImage:
 
         return mask
 
-    def get_texture_features(self, regions: np.ndarray, item: int):
-        """ Gets texture features of the image item.
-
-        Args:
-            regions:
-            item:
-
-        Returns:
-
-        """
-        img = self[item]
-        kernels = texture_features.create_filter_bank()
-        kernels = random.sample(kernels, k=1)
-        res = texture_features.apply_filters_region_img(regions, img, kernels)
-
-        for r, textures in res.items():
-            plt.figure()
-            plt.title("Regions " + str(r))
-            plt.imshow(textures[0])
-        plt.show()
+    # def get_texture_features(self, regions: np.ndarray, item: int):
+    #     """ Gets texture features of the image item.
+    #
+    #     Args:
+    #         regions:
+    #         item:
+    #
+    #     Returns:
+    #
+    #     """
+    #     img = self.images
+    #     kernels = texture_features.create_filter_bank()
+    #     kernels = random.sample(kernels, k=1)
+    #     res = texture_features.apply_filters_region_img(regions, img, kernels)
+    #
+    #     for r, textures in res.items():
+    #         plt.figure()
+    #         plt.title("Regions " + str(r))
+    #         plt.imshow(textures[0])
+    #     plt.show()
 
     @property
     def images(self) -> np.ndarray:
@@ -371,7 +371,7 @@ class DicomImage:
     def __get_raw_image(self, item, dim=None):
         if dim is None:
             dim = self.dim
-        return self.__dicom_file.pixel_array.take(indices=item, axis=dim)
+        return self.images.take(indices=item, axis=dim)
 
     @staticmethod
     def __set_zoom(img: np.ndarray, zoom: Num, position: List[int]):
@@ -464,3 +464,12 @@ class DicomImage:
 
     def corregister(self, input_img):
         pass
+
+    @property
+    def shape(self):
+        """ Returns the 3D shape of the image
+
+        Returns:
+
+        """
+        return self.images.shape

@@ -4,11 +4,11 @@
 """
 
 from typing import List, Tuple
-import cv2
 import numpy as np
+from skimage import segmentation
 
 
-def build_marker(markers: List[Tuple[int, int]], radius: int, img_size: Tuple[int, int]):
+def build_marker(markers: List[Tuple[int, int]], radius: int, img_size: Tuple[int, int, int]):
     """ Build marker image from a set of points.
 
     Args:
@@ -22,7 +22,9 @@ def build_marker(markers: List[Tuple[int, int]], radius: int, img_size: Tuple[in
     markers_img = np.zeros(img_size, dtype=np.int32)
 
     for idx, m in enumerate(markers):
-        markers_img[m[0] - radius: m[0] + radius, m[1] - radius: m[1] + radius] = idx + 1
+        markers_img[max(0, m[0] - radius): min(m[0] + radius, img_size[0]),
+                    max(0, m[1] - radius): min(m[1] + radius, img_size[1]),
+                    max(0, m[2] - radius): min(m[2] + radius, img_size[2])] = idx + 1
 
     return markers_img
 
@@ -37,13 +39,6 @@ def apply_watershed(markers: np.ndarray, image: np.ndarray) -> np.ndarray:
     Returns:
 
     """
-    if len(markers.shape) != 2:
-        raise Exception(
-            "Watershed markers should be a 1D image get (" + str(markers.shape) + ") size")
-
-    if len(image.shape) == 2:
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-
-    mask = cv2.watershed(image, markers)
+    mask = segmentation.watershed(image, markers)
 
     return mask
