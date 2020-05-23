@@ -39,6 +39,14 @@ def exist_model(func):
     return wrapper
 
 
+def long_process(func):
+    def wrapper(controller, *args):
+        func(controller, *args)
+        messagebox.showinfo('Info', "Procés acabat!")
+
+    return wrapper
+
+
 def save_actions(func):
     """ Decorator, saves the actions made to a history
 
@@ -57,7 +65,10 @@ def save_actions(func):
             str_args += str(arg)
         row = [date, name, str_args]
         controller.add_2_history(row)
+        controller.update_status("Inici de la funció " + name)
         func(controller, *args)
+        controller.update_status("Final de la funció " + name)
+
 
     return wrapper
 
@@ -121,6 +132,10 @@ class Controller:
         self.__flag_watershed = False
         self.__markers = []
         self.__mask = None
+
+    def update_status(self, status: str):
+        self.__view.update_status_bar(status)
+        self.__view.update()
 
     def add_2_history(self, row):
         """ Add new element to history.
@@ -190,6 +205,7 @@ class Controller:
         return self.__img_reference is not None
 
     @exist_model
+    @long_process
     @save_actions
     def watershed(self):
         """ Applies the watershed algorithm to the model image.
@@ -215,6 +231,7 @@ class Controller:
 
             self.__mask = mask
             self.__view.set_text("Prova 1 \nProva 2")
+            self.update_view_image()
 
         self.__markers = []
         self.__flag_watershed = not self.__flag_watershed
@@ -279,7 +296,6 @@ class Controller:
         tktable.make_table("History", self.__history, ["Temps", "Funció", 'Parametres'])
 
     @exist_model
-    @save_actions
     def change_zoom(self, value):
         """ Handler. Change the zoom of the image.
 

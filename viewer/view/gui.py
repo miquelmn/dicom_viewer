@@ -23,6 +23,9 @@ class ImageContID(Enum):
     secondary = 1
 
 
+DEFAULT_STATUS_BAR = "A l'espera de noves instruccions"
+
+
 class View(tk.Tk):
 
     def __init__(self, title):
@@ -35,6 +38,8 @@ class View(tk.Tk):
                                                             bd=2)
         self.__button_functions = {}
         self.__func_selectors = []
+        self.__status_bar = tk.Label(self, text=DEFAULT_STATUS_BAR, relief=tk.SUNKEN, bd=2,
+                                     justify=tk.LEFT, anchor=tk.W)
 
         self.__fr_button = None
         self.__fr_images = None
@@ -94,6 +99,9 @@ class View(tk.Tk):
 
         self.__image_second.draw()
         self.__image_second.grid(row=0, column=2, columnspan=1, sticky="nswe")
+
+        self.__status_bar.grid(row=len(self.__func_selectors) + 1, column=0, columnspan=4,
+                               sticky="nswe")
 
         self.mainloop()
 
@@ -202,3 +210,22 @@ class View(tk.Tk):
             return self.__image_first.depth
         else:
             return self.__image_first.depth, self.__image_second.depth
+
+    def reset_status_bar(self):
+        """ Resets the value of the update bar to the default one.
+
+        Returns:
+
+        """
+        self.__status_bar['text'] = DEFAULT_STATUS_BAR
+
+    def update_status_bar(self, status: str):
+        """ Updates the status bar
+
+        Args:
+            status:
+
+        Returns:
+
+        """
+        self.__status_bar['text'] = status
