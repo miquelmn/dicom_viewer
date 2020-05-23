@@ -47,6 +47,7 @@ def long_process(func):
     Returns:
 
     """
+
     def wrapper(controller, *args):
         func(controller, *args)
         messagebox.showinfo('Info', "Procés acabat!")
@@ -90,7 +91,7 @@ def load_lookup():
     """
     global LOOKUP
 
-    if LOOKUP is None:
+    if not LOOKUP:
         path = pkg_resources.resource_filename(
             __name__,
             os.path.join(os.pardir, 'resources', 'lookup.ods')
@@ -125,7 +126,7 @@ class Controller:
                                   Capceleres=self.show_headers,
                                   Historial=self.show_history, Watershed=self.watershed,
                                   Second_image=lambda: self.__open_file(gui.ImageContID.secondary),
-                                  Corregister=self.start_corregistration)
+                                  Corregister=self.start_registration)
 
         self.__position_first = None
 
@@ -180,14 +181,18 @@ class Controller:
         return depth
 
     @exist_model
-    def start_corregistration(self):
-        """ Start corregistration between model 1 and 2
+    @save_actions
+    def start_registration(self):
+        """ Start registration between model 1 and 2
 
         Returns:
 
         """
 
-        pass
+        if self.__img_input is None:
+            raise Exception("Second image is not set")
+
+        self.__img_input.registration(self.__img_reference)
 
     @exist_model
     @save_actions
@@ -210,7 +215,6 @@ class Controller:
         return self.__img_reference is not None
 
     @exist_model
-    @long_process
     @save_actions
     def watershed(self):
         """ Applies the watershed algorithm to the model image.
@@ -228,7 +232,7 @@ class Controller:
         if self.__flag_watershed and not self.__markers:
             messagebox.showerror("Error", "No has seleccionat marcadors inicials")
         elif self.__flag_watershed:
-            mask = self.__img_reference.apply_watershed(self.depth, self.__markers)
+            mask = self.__img_reference.apply_watershed(self.__markers)
             mask[mask == -1] = 0
             mask = mask.astype(float)
             mask = mask / mask.max()

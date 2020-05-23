@@ -4,26 +4,24 @@
 This model contains the information of each the images to visualize. The main focus of this class
 is a set of transformations to the data.
 
-TODO:
-    Instead of showing through matplotlib save it to a variable.
 """
 
-import random
 import glob
 import os
 from typing import List, Union, Tuple
+from enum import Enum
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from pydicom.filereader import dcmread
+import SimpleITK as sItk
 from . import segmentation, texture_features
 
 Num = Union[int, float]
 
 
-def img_2_histogram(img: np.ndarray, size: Tuple[int, int], dpi: int = 96):
+def _img_2_histogram(img: np.ndarray, size: Tuple[int, int], dpi: int = 96):
     """ Extract histogram from an image.
 
     Args:
@@ -51,6 +49,32 @@ def img_2_histogram(img: np.ndarray, size: Tuple[int, int], dpi: int = 96):
     return histogram
 
 
+class Interpolation(Enum):
+    """ Enum. Interpolation available.
+
+    """
+    AFFINE = 0
+    BSPLINE = 1
+    LINEAR = 2
+
+
+class Optimizer(Enum):
+    """ Enum. Optimizers available.
+
+    """
+    GRADIENT = 0
+    LBFGS = 1
+
+
+class Similarity(Enum):
+    """ Enum. Similarity measure availabe.
+
+    """
+    CORRELATION = 0
+    MEAN_SQUARE = 1
+    JOIN_HISTO = 2
+
+
 class DicomFolder:
     """ Class to wrap a folder of images.
 
@@ -74,22 +98,17 @@ class DicomFolder:
         Returns:
 
         """
-        files = glob.glob(os.path.join(path, "*.dcm"))
-        files = sorted(files, key=lambda x: int(x.split(os.path.sep)[-1].split(".")[0]),
-                       reverse=False)
-        tensor = []
+        files = glob.iglob(os.path.join(path, "*.dcm"))
+        dicoms = map(dcmread, files)
+        dicoms = sorted(dicoms, key=lambda x: float(x.SliceLocation), reverse=True)
 
-        img = {}
-        for filename in files:
-            img = dcmread(filename)
-            tensor.append(img.pixel_array)
+        tensor = [cut.pixel_array for cut in dicoms]
 
         if tensor:
             tensor = np.dstack(tensor)
-            headers = img
+            self.__headers = dicoms[0]
+            self.__tensor = tensor
 
-        self.__headers = headers
-        self.__tensor = tensor
 
     @property
     def pixel_array(self) -> np.ndarray:
@@ -136,8 +155,9 @@ class DicomImage:
         self.__real_size = None
         self.__reduced_size = None
         self.__selected_dim = 0
+        self.__registered = None
 
-    def apply_watershed(self, depth, markers: List[Tuple[int, int, int]]) -> np.ndarray:
+    def apply_watershed(self, markers: List[Tuple[int, int, int]]) -> np.ndarray:
         """ Applies watershed algorithm with markers.
 
 
@@ -186,6 +206,8 @@ class DicomImage:
         Returns:
 
         """
+        if self.__registered is not None:
+            return self.__registered
         return self.__dicom_file.pixel_array
 
     @property
@@ -328,7 +350,7 @@ class DicomImage:
         """
         img = self.__get_raw_image(item)
 
-        return img_2_histogram(img, size=self.__max_size)
+        return _img_2_histogram(img, size=self.__max_size)
 
     def get_distance(self, point_1, point_2) -> float:
         """ Calculate the distance between two points.
@@ -462,8 +484,52 @@ class DicomImage:
     def move_image(self, differential):
         self.position += differential[::-1] // 2
 
-    def corregister(self, input_img):
-        pass
+    def registration(self, img_ref, optimizer: Optimizer = Optimizer.GRADIENT,
+                     similarity: Similarity = Similarity.MEAN_SQUARE,
+                     interpolation: Interpolation = Interpolation.LINEAR, update_func=None,
+                     **kwargs):
+        """ Registration of two 3D images.
+
+
+        Args:
+            img_ref:
+            optimizer:
+            similarity:
+            interpolation:
+            update_func:
+
+        Returns:
+
+        """
+        self.__registered = None
+
+        img_ref = sItk.GetImageFromArray(img_ref.images)
+        img_input = sItk.GetImageFromArray(self.images)
+
+        reg = sItk.ImageRegistrationMethod()
+
+        if similarity is Similarity.JOIN_HISTO:
+            reg.SetMetricAsJointHistogramMutualInformation()
+        elif similarity is Similarity.CORRELATION:
+            reg.SetMetricAsCorrelation()
+        else:
+            reg.SetMetricAsMeanSquares()
+
+        if optimizer is Optimizer.LBFGS:
+            reg.SetOptimizerAsLBFGS2(**kwargs)
+        else:
+            reg.SetOptimizerAsRegularStepGradientDescent(**kwargs)
+
+        reg.SetInitialTransform(sItk.TranslationTransform(img_ref.GetDimension()))
+
+        interpolation_opt = (sItk.sitkAffine, sItk.sitkBSpline, sItk.sitkLinear)
+        reg.SetInterpolator(interpolation_opt[interpolation.value])
+
+        if update_func is not None:
+            reg.AddCommand(sItk.sitkIterationEvent, lambda: update_func(reg))
+
+        res = reg.Execute(img_ref, img_input)
+        self.__registered = res
 
     @property
     def shape(self):
