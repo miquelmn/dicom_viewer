@@ -9,9 +9,8 @@ the functions that contains this module are event handler detected on the GUI cl
 import math
 from typing import List
 import time
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
-from tkinter import messagebox
 import pkg_resources
 import numpy as np
 from matplotlib import pyplot as plt
@@ -31,7 +30,7 @@ def exist_model(func):
     """
 
     def wrapper(controller, *args):
-        if controller.is_model():
+        if controller.check_model():
             func(controller, *args)
         else:
             messagebox.showerror("Error", "No has carregat una imatge vàlida")
@@ -40,6 +39,14 @@ def exist_model(func):
 
 
 def long_process(func):
+    """ Decorator. Shows a message after the function is finished.
+
+    Args:
+        func:
+
+    Returns:
+
+    """
     def wrapper(controller, *args):
         func(controller, *args)
         messagebox.showinfo('Info', "Procés acabat!")
@@ -68,7 +75,6 @@ def save_actions(func):
         controller.update_status("Inici de la funció " + name)
         func(controller, *args)
         controller.update_status("Final de la funció " + name)
-
 
     return wrapper
 
@@ -134,6 +140,14 @@ class Controller:
         self.__mask = None
 
     def update_status(self, status: str):
+        """ Update status bar.
+
+        Args:
+            status:
+
+        Returns:
+
+        """
         self.__view.update_status_bar(status)
         self.__view.update()
 
@@ -165,20 +179,6 @@ class Controller:
 
         return depth
 
-    @property
-    def reference_depth(self):
-        """ Depth of the reference image.
-
-        Returns:
-
-        """
-        depth = self.__view.depth
-
-        if not isinstance(depth, list):
-            return -1
-
-        return depth[1]
-
     @exist_model
     def start_corregistration(self):
         """ Start corregistration between model 1 and 2
@@ -201,7 +201,12 @@ class Controller:
         plt.imshow(self.__img_reference[self.depth])
         plt.show()
 
-    def is_model(self) -> bool:
+    def check_model(self) -> bool:
+        """ Check if the model is loaded
+
+        Returns:
+
+        """
         return self.__img_reference is not None
 
     @exist_model
@@ -273,14 +278,13 @@ class Controller:
         Returns:
 
         """
-        global LOOKUP
         dades = []
 
-        for h, v in self.__img_reference.get_header():
-            str_v = str(v)
-            str_h = str(h).replace(" ", "")
-            if hasattr(v, 'length'):
-                if v.length > 200:
+        for header, value in self.__img_reference.get_header():
+            str_v = str(value)
+            str_h = str(header).replace(" ", "")
+            if hasattr(value, 'length'):
+                if value.length > 200:
                     str_v = str_v[:400]
             if str_h in LOOKUP:
                 str_h = LOOKUP[str_h][0]
@@ -367,6 +371,14 @@ class Controller:
     @exist_model
     @save_actions
     def movement(self, event):
+        """ Handler. When is zoomed the images is moved.
+
+        Args:
+            event:
+
+        Returns:
+
+        """
         if not self.__flag_watershed:
             assert self.__position_first is not None
 
@@ -490,7 +502,7 @@ class Controller:
 
         """
         img_coordinates = None
-        if self.is_model():
+        if self.check_model():
             bbox = self.__view.get_image_position()
 
             if 0 < gui_coordinates[0] < (bbox[2] - bbox[0]) and 0 < gui_coordinates[1] < (
@@ -513,15 +525,31 @@ class Controller:
             self.__view.show_image(self.__img_reference[depth], histogram)
 
         if self.__mask is not None and depth < len(self.__img_reference):
-            self.__view.show_image(self.get_mask(depth), img_container=gui.ImageContID.secondary)
+            self.__view.show_image(self.__get_mask(depth), img_container=gui.ImageContID.secondary)
         elif self.__mask is None and self.__img_input is not None:
             self.__view.show_image(self.__img_input[depth], img_container=gui.ImageContID.secondary)
 
-    def get_mask(self, item: int):
+    def __get_mask(self, item: int):
+        """ Returns a cut of the mask
+
+        Args:
+            item:
+
+        Returns:
+
+        """
+        if self.__mask is None:
+            raise IndexError("Mask does not exist")
+
         dim = self.__img_reference.dim
 
         return self.__mask.take(indices=item, axis=dim)
 
     def start(self):
+        """ Starts the app
+
+        Returns:
+
+        """
         load_lookup()
         self.__view.draw()
