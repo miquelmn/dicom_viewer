@@ -315,7 +315,6 @@ class Controller:
             mask = mask * 255
 
             self.__mask = mask
-            self.__view.set_text("Prova 1 \nProva 2")
             self.update_view_image()
 
         self.__markers = []
@@ -634,6 +633,15 @@ class Controller:
 
         if self.__mask is not None and depth < len(self.__img_reference):
             self.__view.show_image(self.__get_mask(depth), img_container=gui.ImageContID.secondary)
+            text_features = DicomImage.get_texture_features(self.__img_reference[depth],
+                                                            self.__get_mask(depth))
+
+            features_str = ""
+
+            for region, (mean, std) in text_features.items():
+                features_str += "Regió " + region + ":\n\tMean = " + str(mean) + "\n\tSTD = " + str(
+                    std) + " \n"
+            self.__view.set_text(features_str)
         elif self.__mask is None and self.__img_input is not None and depth < len(self.__img_input):
             self.__view.show_image(self.__img_input[depth], img_container=gui.ImageContID.secondary)
 

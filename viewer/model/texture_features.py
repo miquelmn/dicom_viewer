@@ -7,6 +7,7 @@ defined by a set of kernels. To get the texture features an image is convolved w
 """
 
 from typing import List
+from copy import deepcopy
 import numpy as np
 from scipy import ndimage
 from skimage import filters
@@ -60,15 +61,21 @@ def apply_filters_region_img(regions: np.ndarray, img: np.ndarray, bank_kernels:
     Returns:
 
     """
+    regions = deepcopy(regions)
+    regions = (regions / regions.max()) * 255
+    regions = regions.astype(np.uint8)
 
     res = {}
-    for region_value in range(1, regions.max()):
+    region_id = 1
+    for region_value in range(0, regions.max()):
         region = np.copy(img)
         region[regions != region_value] = 0
 
-        row = []
-        for kernel in bank_kernels:
-            row.append(apply_filter(region, kernel))
-        res[region_value] = row
+        if np.count_nonzero(region) > 10:
+            row = []
+            for kernel in bank_kernels:
+                row.append(apply_filter(region, kernel))
+            res[str(region_id)] = row
+            region_id += 1
 
     return res

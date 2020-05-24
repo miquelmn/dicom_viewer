@@ -10,6 +10,7 @@ import glob
 import os
 from typing import List, Union, Tuple
 from enum import Enum
+import random
 import numpy as np
 import cv2
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -18,6 +19,7 @@ from pydicom.filereader import dcmread
 import SimpleITK as sItk
 from skimage import transform
 from . import segmentation, texture_features
+from matplotlib import pyplot as plt
 
 Num = Union[int, float]
 
@@ -242,26 +244,26 @@ class DicomImage:
 
         self.__tensor = images
 
-    # def get_texture_features(self, regions: np.ndarray, item: int):
-    #     """ Gets texture features of the image item.
-    #
-    #     Args:
-    #         regions:
-    #         item:
-    #
-    #     Returns:
-    #
-    #     """
-    #     img = self.images
-    #     kernels = texture_features.create_filter_bank()
-    #     kernels = random.sample(kernels, k=1)
-    #     res = texture_features.apply_filters_region_img(regions, img, kernels)
-    #
-    #     for r, textures in res.items():
-    #         plt.figure()
-    #         plt.title("Regions " + str(r))
-    #         plt.imshow(textures[0])
-    #     plt.show()
+    @staticmethod
+    def get_texture_features(img, mask: np.ndarray):
+        """ Gets texture features of the image item.
+
+        Args:
+            img:
+            mask:
+
+        Returns:
+
+        """
+        kernels = texture_features.create_filter_bank()
+        kernels = random.sample(kernels, k=1)
+        res = texture_features.apply_filters_region_img(mask, img, kernels)
+
+        regions = {}
+        for r, textures in res.items():
+            regions[str(r)] = np.mean(textures[0]), np.std(textures[0])
+
+        return regions
 
     @property
     def images(self) -> np.ndarray:

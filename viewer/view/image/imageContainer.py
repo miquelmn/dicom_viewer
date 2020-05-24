@@ -101,9 +101,9 @@ class ContainerImage(tk.Frame):
             self.__scale_zoom = tk.Scale(frame_img, from_=1, to=1, command=self.__f_zoom)
             self.__scale_zoom.grid(row=0, column=2, sticky="nsew", rowspan=2)
 
-        self.__label_pixel = tk.Label(frame_img, anchor="nw",
-                                      text=self.__get_label_text())
-        self.__label_pixel.grid(row=1, column=0, sticky="W")
+        self.__label_pixel = tk.Label(frame_img, text=self.__get_label_text(), justify=tk.LEFT,
+                                      anchor=tk.W)
+        self.__label_pixel.grid(row=1, column=0, sticky="nswe")
 
         frame_img.grid(row=0, column=1, sticky="nsew")
 
