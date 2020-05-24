@@ -119,7 +119,7 @@ class Controller:
                                   pixel_value=('<Motion>', self.position_value),
                                   distance=('<Button-3>', self.calc_distance),
                                   sel_dim=(["First", "Second", "Third"], self.change_dim),
-                                  register=self.start_registration,
+                                  register=self.start_registration, alpha=self.start_fusion,
                                   Visualitzador_avançat=self.show_adv_image,
                                   Obrir_fitxer=lambda: self.__open_file(),
                                   Obrir_carpeta=lambda: self.__open_file(False),
@@ -139,6 +139,14 @@ class Controller:
         self.__markers = []
         self.__mask = None
 
+        self.__fusion = False
+
+    @exist_model
+    @save_actions
+    def start_fusion(self):
+        self.__fusion = True
+        self.update_view_image()
+
     def update_iteration(self, method):
         self.__view.update_status_bar(
             "{0:3} = {1:10.5f} : {2}".format(method.GetOptimizerIteration(),
@@ -146,6 +154,31 @@ class Controller:
                                              method.GetOptimizerPosition()))
         self.__view.update()
 
+    def __get_fusion(self, depth):
+        alpha = self.__view.alpha
+
+        cut_ref = self.__img_reference[depth]
+        cut_inp = self.__img_input[depth]
+
+        if cut_ref.shape[0] == cut_inp.shape[0] and cut_ref.shape[1] == cut_inp.shape[1]:
+            cut_inp = cut_inp / cut_inp.max()
+            cut_ref = cut_ref / cut_ref.max()
+
+            res = [cut_ref * (1 - alpha), cut_inp * alpha, np.zeros_like(cut_ref)]
+
+            res = np.dstack(res)
+
+            res = res * 255
+            res = res.astype(np.uint8)
+
+            return res
+        else:
+            self.__fusion = False
+
+            return None
+
+    @exist_model
+    @save_actions
     def rotate(self):
         """ Rotate the image 90 degrees.
 
@@ -603,6 +636,12 @@ class Controller:
             self.__view.show_image(self.__get_mask(depth), img_container=gui.ImageContID.secondary)
         elif self.__mask is None and self.__img_input is not None and depth < len(self.__img_input):
             self.__view.show_image(self.__img_input[depth], img_container=gui.ImageContID.secondary)
+
+        if self.__fusion:
+            fusion = self.__get_fusion(depth)
+
+            if fusion is not None:
+                self.__view.show_image(fusion, img_container=gui.ImageContID.third)
 
     def __get_mask(self, item: int):
         """ Returns a cut of the mask

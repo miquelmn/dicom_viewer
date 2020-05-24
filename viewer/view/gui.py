@@ -68,6 +68,7 @@ class View(tk.Tk):
             distance:
             sel_dim:
             register:
+            alpha:
             **kwargs:
 
         Returns:
@@ -167,10 +168,9 @@ class View(tk.Tk):
         tk.Label(fr_buttons, text="Alpha", justify=tk.LEFT, anchor=tk.W).grid(row=row, column=0,
                                                                               sticky="nswe",
                                                                               padx=5)
-        self.__alpha = tk.Scale(fr_buttons, from_=0, to=100, orient=tk.HORIZONTAL).grid(row=row,
-                                                                                        column=1,
-                                                                                        sticky="nswe",
-                                                                                        padx=5)
+        self.__alpha = tk.Scale(fr_buttons, from_=0, to=100, orient=tk.HORIZONTAL)
+        self.__alpha.grid(row=row, column=1, sticky="nswe", padx=5)
+
         row += 1
         tk.Button(fr_buttons, text="Fusió", command=self.__fn_alpha).grid(row=row, column=0,
                                                                           sticky="ew", padx=5,
