@@ -109,7 +109,6 @@ class DicomFolder:
             self.__headers = dicoms[0]
             self.__tensor = tensor
 
-
     @property
     def pixel_array(self) -> np.ndarray:
         """ Returns the tensor that defines the 3D image.
@@ -177,6 +176,8 @@ class DicomImage:
         mask = segmentation.apply_watershed(markers, img)
 
         return mask
+
+
 
     # def get_texture_features(self, regions: np.ndarray, item: int):
     #     """ Gets texture features of the image item.
@@ -503,8 +504,8 @@ class DicomImage:
         """
         self.__registered = None
 
-        img_ref = sItk.GetImageFromArray(img_ref.images)
-        img_input = sItk.GetImageFromArray(self.images)
+        img_ref = sItk.GetImageFromArray(img_ref.images.astype(np.float32))
+        img_input = sItk.GetImageFromArray(self.images.astype(np.float32))
 
         reg = sItk.ImageRegistrationMethod()
 
@@ -518,7 +519,9 @@ class DicomImage:
         if optimizer is Optimizer.LBFGS:
             reg.SetOptimizerAsLBFGS2(**kwargs)
         else:
-            reg.SetOptimizerAsRegularStepGradientDescent(**kwargs)
+            reg.SetOptimizerAsGradientDescent(learningRate=0.006, numberOfIterations=10,
+                                              convergenceMinimumValue=1e-6,
+                                              convergenceWindowSize=10)
 
         reg.SetInitialTransform(sItk.TranslationTransform(img_ref.GetDimension()))
 
@@ -529,7 +532,15 @@ class DicomImage:
             reg.AddCommand(sItk.sitkIterationEvent, lambda: update_func(reg))
 
         res = reg.Execute(img_ref, img_input)
-        self.__registered = res
+
+        resampler = sItk.ResampleImageFilter()
+        resampler.SetReferenceImage(img_ref)
+        resampler.SetInterpolator(sItk.sitkLinear)
+        resampler.SetDefaultPixelValue(1)
+        resampler.SetTransform(res)
+
+        out = resampler.Execute(img_input)
+        self.__registered = sItk.GetArrayFromImage(out)
 
     @property
     def shape(self):
