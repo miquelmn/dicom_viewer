@@ -16,7 +16,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from viewer.view import tktable, gui
-from viewer.model.dicom_files import DicomImage
+from viewer.model.dicom_files import DicomImage, Interpolation, Optimizer, Similarity
 
 
 def exist_model(func):
@@ -119,13 +119,13 @@ class Controller:
                                   pixel_value=('<Motion>', self.position_value),
                                   distance=('<Button-3>', self.calc_distance),
                                   sel_dim=(["First", "Second", "Third"], self.change_dim),
+                                  register=self.start_registration,
                                   Visualitzador_avançat=self.show_adv_image,
-                                  Obrir_fitxer=lambda: self.__open_file(gui.ImageContID.principal),
-                                  Obrir_carpeta=lambda: self.__open_file(gui.ImageContID.principal,
-                                                                         False),
+                                  Obrir_fitxer=lambda: self.__open_file(),
+                                  Obrir_carpeta=lambda: self.__open_file(False),
                                   Rota_90=self.rotate, Swap_viewers=self.swap_viewers,
                                   Capceleres=self.show_headers, Historial=self.show_history,
-                                  Watershed=self.watershed, Corregister=self.start_registration)
+                                  Watershed=self.watershed)
 
         self.__position_first = None
 
@@ -138,6 +138,13 @@ class Controller:
         self.__flag_watershed = False
         self.__markers = []
         self.__mask = None
+
+    def update_iteration(self, method):
+        self.__view.update_status_bar(
+            "{0:3} = {1:10.5f} : {2}".format(method.GetOptimizerIteration(),
+                                             method.GetMetricValue(),
+                                             method.GetOptimizerPosition()))
+        self.__view.update()
 
     def rotate(self):
         """ Rotate the image 90 degrees.
@@ -202,7 +209,33 @@ class Controller:
         if self.__img_input is None:
             raise Exception("Second image is not set")
 
-        self.__img_input.registration(self.__img_reference)
+        reg_fields = self.__view.registration_fields
+
+        if len(reg_fields["Learning rate"]) > 0:
+            lre = float(reg_fields["Learning rate"])
+        else:
+            lre = 0.0
+
+        if len(reg_fields["Iterations"]) > 0:
+            epochs = int(reg_fields["Iterations"])
+        else:
+            epochs = 1
+
+        similarity = reg_fields["Similarity"]
+        optimizer = reg_fields["Optimizer"]
+        interpolation = reg_fields["Interpolation"]
+
+        reg = self.__img_input.registration(self.__img_reference,
+                                            optimizer=Optimizer.from_key(optimizer),
+                                            similarity=Similarity.from_key(similarity),
+                                            interpolation=Interpolation.from_key(interpolation),
+                                            lre=lre, epochs=epochs,
+                                            update_func=self.update_iteration)
+
+        messagebox.showinfo("Mètrica",
+                            "Corregistre finalitzat, mètrica " + reg_fields[
+                                "Similarity"] + " = " + str(reg.GetMetricValue()))
+        self.update_view_image()
 
     @exist_model
     @save_actions
@@ -256,11 +289,11 @@ class Controller:
         self.__flag_watershed = not self.__flag_watershed
 
     @save_actions
-    def __open_file(self, img_container: gui.ImageContID, file: bool = True):
+    def __open_file(self, file: bool = True):
         """ Load and show Dicom image into the gui
 
         Args:
-            img_container (gui.ImageContID) : Identifier to the container to thread.
+            file (bool):
 
         Returns:
 
@@ -274,12 +307,14 @@ class Controller:
 
         if filepath:
             image = DicomImage(filepath, self.__view.img_space)
-            if img_container is gui.ImageContID.principal:
-                histogram = image.get_histogram(0)
-                self.__img_reference = image
-            else:
+            if self.__img_reference is not None and self.__img_input is None:
                 histogram = None
+                img_container = gui.ImageContID.secondary
                 self.__img_input = image
+            else:
+                histogram = image.get_histogram(0)
+                img_container = gui.ImageContID.principal
+                self.__img_reference = image
 
             self.__view.show_image(image[0], img_container=img_container, histogram=histogram)
             self.__view.set_max_depth(len(image) - 1)

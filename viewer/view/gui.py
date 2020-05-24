@@ -42,11 +42,13 @@ class View(tk.Tk):
         self.__status_bar = tk.Label(self, text=DEFAULT_STATUS_BAR, relief=tk.SUNKEN, bd=2,
                                      justify=tk.LEFT, anchor=tk.W)
 
+        self.__registration_f = None
         self.__fr_button = None
         self.__fr_images = None
+        self.__registration_fields = {}
 
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
-                      distance, sel_dim, **kwargs):
+                      distance, sel_dim, register, **kwargs):
         """ Set listeners for the events handled
 
         Args:
@@ -58,6 +60,7 @@ class View(tk.Tk):
             pixel_value:
             distance:
             sel_dim:
+            register:
             **kwargs:
 
         Returns:
@@ -67,6 +70,7 @@ class View(tk.Tk):
                                          pixel_value, distance)
         self.__func_selectors = [sel_dim]
         self.__button_functions = kwargs
+        self.__registration_f = register
 
     def set_title(self, titol: str):
         """ Set the window title.
@@ -124,20 +128,89 @@ class View(tk.Tk):
             name = name.replace("_", " ")
             buttons.append(tk.Button(fr_buttons, text=name, command=func))
 
-        buttons.append(ttk.Separator(fr_buttons, orient='horizontal'))
+        row = 0
+        for row, b in enumerate(buttons):
+            b.grid(row=row, column=0, sticky="ew", padx=5, columnspan=2)
 
         for values, func in self.__func_selectors:
+            row += 1
             variable = tk.StringVar(fr_buttons)
             variable.set("First")  # default value
 
-            buttons.append(tk.OptionMenu(fr_buttons, variable, *values, command=func))
+            tk.Label(fr_buttons, text="Dimensió", justify=tk.LEFT, anchor=tk.W).grid(row=row,
+                                                                                     column=0,
+                                                                                     sticky="nswe")
+            tk.OptionMenu(fr_buttons, variable, *values, command=func).grid(row=row, column=1,
+                                                                            sticky="ew", padx=5)
 
-        for row, b in enumerate(buttons):
-            b.grid(row=row, column=0, sticky="ew", padx=5)
-
+        self.__registration_menu(fr_buttons, first_row=row)
         fr_buttons.grid(row=0, column=0, sticky="ns")
 
         self.__fr_button = fr_buttons
+
+    def __registration_menu(self, master, first_row: int):
+        """ Draws the submenu for registration.
+
+        Args:
+            master:
+            first_row:
+
+        Returns:
+
+        """
+        row = first_row + 1
+
+        tl = tk.Label(master, text="Registration", justify=tk.LEFT, anchor=tk.W)
+        tl.grid(row=row, column=0, sticky="nswe", pady=15)
+
+        fields = {"Learning rate": None, "Iterations": None}
+
+        for field in fields.keys():
+            row += 1
+
+            tk.Label(master, text=field, justify=tk.LEFT, anchor=tk.W).grid(row=row,
+                                                                            sticky="nswe")
+            fields[field] = tk.Entry(master)
+            fields[field].grid(row=row, column=1)
+
+        options = {"Similarity": ["MSE", "Correlation", "Histogram"],
+                   "Optimizer": ["Gradient descent", "LBFGS"],
+                   "Interpolation": ["Linear", "B Spline", "Afí"]}
+
+        for key, options_list in options.items():
+            row += 1
+            label = tk.Label(master, text=key, justify=tk.LEFT, anchor=tk.W)
+            label.grid(row=row, column=0, sticky="nswe", pady=10)
+
+            variable = tk.StringVar(master)
+            variable.set(options_list[0])
+
+            opt = tk.OptionMenu(master, variable, *options_list)
+            opt.grid(row=row, column=1, sticky="nswe", columnspan=1, pady=5)
+            options[key] = variable
+
+        row = row + 1
+        aux = tk.Button(master, text="Fer corregistre", command=self.__registration_f)
+        aux.grid(row=row, column=0, sticky="nswe", columnspan=2, pady=15)
+
+        self.__registration_fields = {"Fields": fields, "Options": options}
+
+    @property
+    def registration_fields(self):
+        """ Returns the field with the option for the registration.
+
+        Returns:
+
+        """
+        reg_fields = self.__registration_fields
+
+        res = {}
+        for value in reg_fields.values():
+            for sub_key, sub_value in value.items():
+                aux = sub_value.get()
+                res[sub_key] = aux
+
+        return res
 
     def show_image(self, img, histogram: np.ndarray = None,
                    img_container: ImageContID = ImageContID.principal):

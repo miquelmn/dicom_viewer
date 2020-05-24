@@ -58,6 +58,23 @@ class Interpolation(Enum):
     BSPLINE = 1
     LINEAR = 2
 
+    @staticmethod
+    def from_key(val: str):
+        """ Converts key to enum
+
+        Args:
+            val:
+
+        Returns:
+
+        """
+        if val == "B Spline":
+            return Interpolation.BSPLINE
+        elif val == "Afí":
+            return Interpolation.AFFINE
+        else:
+            return Interpolation.LINEAR
+
 
 class Optimizer(Enum):
     """ Enum. Optimizers available.
@@ -65,6 +82,21 @@ class Optimizer(Enum):
     """
     GRADIENT = 0
     LBFGS = 1
+
+    @staticmethod
+    def from_key(val):
+        """ Return an enum from a string
+
+        Args:
+            val:
+
+        Returns:
+
+        """
+        if val == "LBFGS":
+            return Optimizer.LBFGS
+        else:
+            return Optimizer.GRADIENT
 
 
 class Similarity(Enum):
@@ -74,6 +106,23 @@ class Similarity(Enum):
     CORRELATION = 0
     MEAN_SQUARE = 1
     JOIN_HISTO = 2
+
+    @staticmethod
+    def from_key(val):
+        """ Convert key to enum
+
+        Args:
+            val:
+
+        Returns:
+
+        """
+        if val == "Histogram":
+            return Similarity.JOIN_HISTO
+        elif val == "Correlation":
+            return Similarity.CORRELATION
+        else:
+            return Similarity.MEAN_SQUARE
 
 
 class DicomFolder:
@@ -107,7 +156,7 @@ class DicomFolder:
         if tensor:
             self.__dicom_file = dicoms[0]
             tensor = np.dstack(tensor)
-            self.__tensor = np.moveaxis(tensor, -1, 0)
+            self.__tensor = tensor
 
     @property
     def pixel_array(self) -> np.ndarray:
@@ -502,9 +551,8 @@ class DicomImage:
     def registration(self, img_ref, optimizer: Optimizer = Optimizer.GRADIENT,
                      similarity: Similarity = Similarity.MEAN_SQUARE,
                      interpolation: Interpolation = Interpolation.LINEAR, update_func=None,
-                     **kwargs):
+                     lre=0.006, epochs=10, conv_min_val=1e-6, conv_wind_size=10, **kwargs):
         """ Registration of two 3D images.
-
 
         Args:
             img_ref:
@@ -512,17 +560,23 @@ class DicomImage:
             similarity:
             interpolation:
             update_func:
+            lre:
+            epochs:
+            conv_min_val:
+            conv_wind_size:
+            **kwargs:
 
         Returns:
 
         """
         self.__registered = None
 
+        min_pixel = float(img_ref.images.min())
+
         img_ref = sItk.GetImageFromArray(img_ref.images.astype(np.float32))
         img_input = sItk.GetImageFromArray(self.images.astype(np.float32))
 
         reg = sItk.ImageRegistrationMethod()
-
         if similarity is Similarity.JOIN_HISTO:
             reg.SetMetricAsJointHistogramMutualInformation()
         elif similarity is Similarity.CORRELATION:
@@ -530,17 +584,25 @@ class DicomImage:
         else:
             reg.SetMetricAsMeanSquares()
 
+        reg.SetMetricSamplingStrategy(reg.RANDOM)
+        reg.SetMetricSamplingPercentage(0.01)
+
         if optimizer is Optimizer.LBFGS:
             reg.SetOptimizerAsLBFGS2(**kwargs)
         else:
-            reg.SetOptimizerAsGradientDescent(learningRate=0.006, numberOfIterations=10,
-                                              convergenceMinimumValue=1e-6,
-                                              convergenceWindowSize=10)
-
-        reg.SetInitialTransform(sItk.TranslationTransform(img_ref.GetDimension()))
+            reg.SetOptimizerAsGradientDescent(learningRate=lre,
+                                              numberOfIterations=epochs,
+                                              convergenceMinimumValue=conv_min_val,
+                                              convergenceWindowSize=conv_wind_size)
 
         interpolation_opt = (sItk.sitkAffine, sItk.sitkBSpline, sItk.sitkLinear)
         reg.SetInterpolator(interpolation_opt[interpolation.value])
+
+        initial_transform = sItk.CenteredTransformInitializer(img_ref, img_input,
+                                                              sItk.Euler3DTransform(),
+                                                              sItk.CenteredTransformInitializerFilter.GEOMETRY)
+
+        reg.SetInitialTransform(initial_transform, inPlace=False)
 
         if update_func is not None:
             reg.AddCommand(sItk.sitkIterationEvent, lambda: update_func(reg))
@@ -549,12 +611,14 @@ class DicomImage:
 
         resampler = sItk.ResampleImageFilter()
         resampler.SetReferenceImage(img_ref)
-        resampler.SetInterpolator(sItk.sitkLinear)
-        resampler.SetDefaultPixelValue(1)
+        resampler.SetInterpolator(interpolation_opt[interpolation.value])
+        resampler.SetDefaultPixelValue(min_pixel)
         resampler.SetTransform(res)
 
         out = resampler.Execute(img_input)
         self.__registered = sItk.GetArrayFromImage(out)
+
+        return reg
 
     @property
     def shape(self):
