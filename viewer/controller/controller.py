@@ -377,7 +377,12 @@ class Controller:
         """
         zoom = int(value)
 
-        self.__img_reference.resize_factor = zoom
+        if self.__img_reference is not None:
+            self.__img_reference.resize_factor = zoom
+
+        if self.__img_input is not None:
+            self.__img_input.resize_factor = zoom
+
         self.update_view_image()
 
     @exist_model
@@ -455,6 +460,10 @@ class Controller:
             self.__position_first = None
 
             self.__img_reference.move_image(old_position - position)
+
+            if self.__img_input is not None:
+                self.__img_input.move_image(old_position - position)
+
             self.update_view_image()
 
     @exist_model

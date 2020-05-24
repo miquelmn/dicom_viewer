@@ -22,6 +22,7 @@ class ImageContID(Enum):
     """
     principal = 0
     secondary = 1
+    third = 2
 
 
 DEFAULT_STATUS_BAR = "A l'espera de noves instruccions"
@@ -35,8 +36,11 @@ class View(tk.Tk):
         self.__title = title
         self.__image_first = imageContainer.ContainerImage(self, histogram=True, relief=tk.RAISED,
                                                            bd=2)
-        self.__image_second = imageContainer.ContainerImage(self, histogram=False, relief=tk.RAISED,
-                                                            bd=2)
+        self.__image_second = imageContainer.ContainerImage(self, histogram=False, depth=False,
+                                                            zoom=False, relief=tk.RAISED, bd=2)
+        self.__image_merge = imageContainer.ContainerImage(self, histogram=False, depth=False,
+                                                           zoom=False, relief=tk.RAISED,
+                                                           bd=2)
         self.__button_functions = {}
         self.__func_selectors = []
         self.__status_bar = tk.Label(self, text=DEFAULT_STATUS_BAR, relief=tk.SUNKEN, bd=2,
@@ -104,6 +108,9 @@ class View(tk.Tk):
 
         self.__image_second.draw()
         self.__image_second.grid(row=0, column=2, columnspan=1, sticky="nswe")
+
+        self.__image_merge.draw()
+        self.__image_merge.grid(row=0, column=3, columnspan=1, sticky="nswe")
 
         self.__status_bar.grid(row=len(self.__func_selectors) + 1, column=0, columnspan=4,
                                sticky="nswe")
@@ -226,6 +233,8 @@ class View(tk.Tk):
         """
         if img_container is ImageContID.secondary:
             self.__image_second.update_image(img)
+        elif img_container is ImageContID.third:
+            self.__image_merge.update_image(img)
         else:
             self.__image_first.update_image(img, histogram)
 

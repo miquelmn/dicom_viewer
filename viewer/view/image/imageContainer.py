@@ -12,7 +12,7 @@ class ContainerImage(tk.Frame):
     __pixel_value_fixed = "Valor de píxel: "
     __distance_value_fixed = " Distància: "
 
-    def __init__(self, parent, histogram=True, **kwargs):
+    def __init__(self, parent, histogram=True, depth=True, zoom=True, **kwargs):
         super().__init__(parent, **kwargs)
 
         self.__img_size = (400, 400)
@@ -26,6 +26,9 @@ class ContainerImage(tk.Frame):
             self.__canvas_histogram = None
 
         self.__n_images = 1
+
+        self.__flags_guis = {"Depth": depth, "Zoom": zoom}
+
         self.__scale_depth = None
         self.__scale_zoom = None
         self.__label_pixel = None
@@ -89,12 +92,14 @@ class ContainerImage(tk.Frame):
     def draw(self):
         frame_img = self
 
-        self.__scale_depth = tk.Scale(frame_img, from_=0, to=1, orient=tk.HORIZONTAL,
-                                      command=self.__f_depth)
-        self.__scale_depth.grid(row=3, column=0, sticky="nsew")
+        if self.__flags_guis["Depth"]:
+            self.__scale_depth = tk.Scale(frame_img, from_=0, to=1, orient=tk.HORIZONTAL,
+                                          command=self.__f_depth)
+            self.__scale_depth.grid(row=3, column=0, sticky="nsew")
 
-        self.__scale_zoom = tk.Scale(frame_img, from_=1, to=1, command=self.__f_zoom)
-        self.__scale_zoom.grid(row=0, column=2, sticky="nsew", rowspan=2)
+        if self.__flags_guis["Zoom"]:
+            self.__scale_zoom = tk.Scale(frame_img, from_=1, to=1, command=self.__f_zoom)
+            self.__scale_zoom.grid(row=0, column=2, sticky="nsew", rowspan=2)
 
         self.__label_pixel = tk.Label(frame_img, anchor="nw",
                                       text=self.__get_label_text())
@@ -113,7 +118,8 @@ class ContainerImage(tk.Frame):
 
     def update_image(self, img: np.ndarray, histogram=None):
         self.__canvas_image.show_image(img)
-        self.__scale_zoom.configure(to=100)
+        if self.__flags_guis["Zoom"]:
+            self.__scale_zoom.configure(to=100)
 
         if histogram is not None:
             self.__canvas_histogram.show_image(histogram)
