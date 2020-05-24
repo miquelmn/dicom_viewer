@@ -405,6 +405,10 @@ class DicomImage:
 
         return img
 
+    @property
+    def reduced_size(self):
+        return self.__reduced_size
+
     def get_histogram(self, item: int):
         """ Get the histogram of the cut in the depth passed as parameter.
 

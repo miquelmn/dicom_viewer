@@ -17,6 +17,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from viewer.view import tktable, gui
 from viewer.model.dicom_files import DicomImage, Interpolation, Optimizer, Similarity
+import cv2
 
 
 def exist_model(func):
@@ -664,8 +665,11 @@ class Controller:
             raise IndexError("Mask does not exist")
 
         dim = self.__img_reference.dim
+        mask = self.__mask.take(indices=item, axis=dim)
 
-        return self.__mask.take(indices=item, axis=dim)
+        mask = cv2.resize(mask, self.__img_reference.reduced_size)
+
+        return mask
 
     def start(self):
         """ Starts the app
