@@ -123,9 +123,8 @@ class Controller:
                                   Obrir_fitxer=lambda: self.__open_file(gui.ImageContID.principal),
                                   Obrir_carpeta=lambda: self.__open_file(gui.ImageContID.principal,
                                                                          False),
-                                  Capceleres=self.show_headers,
+                                  Swap_viewers=self.swap_viewers, Capceleres=self.show_headers,
                                   Historial=self.show_history, Watershed=self.watershed,
-                                  Second_image=lambda: self.__open_file(gui.ImageContID.secondary),
                                   Corregister=self.start_registration)
 
         self.__position_first = None
@@ -255,6 +254,7 @@ class Controller:
         Returns:
 
         """
+        self.__mask = None
         if file:
             filepath = filedialog.askopenfilename(initialdir="~",
                                                   filetypes=[("Dicom files", "*.dcm")])
@@ -273,6 +273,22 @@ class Controller:
             self.__view.show_image(image[0], img_container=img_container, histogram=histogram)
             self.__view.set_max_depth(len(image) - 1)
             self.__view.title(f"DICOM Reader - {filepath}")
+
+    def swap_viewers(self):
+        """ Swap the viewers
+
+        Returns:
+
+        """
+        if self.__mask is not None:
+            res = messagebox.askokcancel("Title",
+                                         "Aquesta acció eliminara la segementació existent")
+            if not res:
+                return
+            self.__mask = None
+
+        self.__img_input, self.__img_reference = self.__img_reference, self.__img_input
+        self.update_view_image()
 
     @exist_model
     @save_actions
@@ -523,14 +539,13 @@ class Controller:
         """
         depth = self.depth
 
-        histogram = self.__img_reference.get_histogram(depth)
-
         if self.__img_reference is not None and depth < len(self.__img_reference):
+            histogram = self.__img_reference.get_histogram(depth)
             self.__view.show_image(self.__img_reference[depth], histogram)
 
         if self.__mask is not None and depth < len(self.__img_reference):
             self.__view.show_image(self.__get_mask(depth), img_container=gui.ImageContID.secondary)
-        elif self.__mask is None and self.__img_input is not None:
+        elif self.__mask is None and self.__img_input is not None and depth < len(self.__img_input):
             self.__view.show_image(self.__img_input[depth], img_container=gui.ImageContID.secondary)
 
     def __get_mask(self, item: int):
