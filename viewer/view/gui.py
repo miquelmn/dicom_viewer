@@ -46,13 +46,16 @@ class View(tk.Tk):
         self.__status_bar = tk.Label(self, text=DEFAULT_STATUS_BAR, relief=tk.SUNKEN, bd=2,
                                      justify=tk.LEFT, anchor=tk.W)
 
-        self.__registration_f = None
+        self.__fn_registration = None
         self.__fr_button = None
         self.__fr_images = None
         self.__registration_fields = {}
 
+        self.__alpha = None
+        self.__fn_alpha = None
+
     def set_functions(self, movements, depth, zoom, histogram, histogram_release, pixel_value,
-                      distance, sel_dim, register, **kwargs):
+                      distance, sel_dim, register, alpha, **kwargs):
         """ Set listeners for the events handled
 
         Args:
@@ -74,7 +77,8 @@ class View(tk.Tk):
                                          pixel_value, distance)
         self.__func_selectors = [sel_dim]
         self.__button_functions = kwargs
-        self.__registration_f = register
+        self.__fn_registration = register
+        self.__fn_alpha = alpha
 
     def set_title(self, titol: str):
         """ Set the window title.
@@ -150,7 +154,28 @@ class View(tk.Tk):
             tk.OptionMenu(fr_buttons, variable, *values, command=func).grid(row=row, column=1,
                                                                             sticky="ew", padx=5)
 
-        self.__registration_menu(fr_buttons, first_row=row)
+        row = self.__registration_menu(fr_buttons, first_row=row)
+        row += 1
+        tk.Label(fr_buttons, text="Fusió alpha", justify=tk.LEFT, anchor=tk.W,
+                 font='Helvetica 11 bold').grid(row=row, column=0, sticky="nswe", pady=(15, 0))
+
+        row += 1
+        ttk.Separator(fr_buttons, orient="horizontal").grid(row=row, column=0, sticky="nswe",
+                                                            pady=5, columnspan=2)
+
+        row += 1
+        tk.Label(fr_buttons, text="Alpha", justify=tk.LEFT, anchor=tk.W).grid(row=row, column=0,
+                                                                              sticky="nswe",
+                                                                              padx=5)
+        self.__alpha = tk.Scale(fr_buttons, from_=0, to=100, orient=tk.HORIZONTAL).grid(row=row,
+                                                                                        column=1,
+                                                                                        sticky="nswe",
+                                                                                        padx=5)
+        row += 1
+        tk.Button(fr_buttons, text="Fusió", command=self.__fn_alpha).grid(row=row, column=0,
+                                                                          sticky="ew", padx=5,
+                                                                          columnspan=2)
+
         fr_buttons.grid(row=0, column=0, sticky="ns")
 
         self.__fr_button = fr_buttons
@@ -167,8 +192,13 @@ class View(tk.Tk):
         """
         row = first_row + 1
 
-        tl = tk.Label(master, text="Registration", justify=tk.LEFT, anchor=tk.W)
-        tl.grid(row=row, column=0, sticky="nswe", pady=15)
+        tl = tk.Label(master, text="Registration", justify=tk.LEFT, anchor=tk.W,
+                      font='Helvetica 11 bold')
+        tl.grid(row=row, column=0, sticky="nswe", pady=(15, 0))
+
+        row += 1
+        ttk.Separator(master, orient="horizontal").grid(row=row, column=0, sticky="nswe", pady=5,
+                                                        columnspan=2)
 
         fields = {"Learning rate": None, "Iterations": None}
 
@@ -197,10 +227,12 @@ class View(tk.Tk):
             options[key] = variable
 
         row = row + 1
-        aux = tk.Button(master, text="Fer corregistre", command=self.__registration_f)
+        aux = tk.Button(master, text="Fer corregistre", command=self.__fn_registration)
         aux.grid(row=row, column=0, sticky="nswe", columnspan=2, pady=15)
 
         self.__registration_fields = {"Fields": fields, "Options": options}
+
+        return row
 
     @property
     def registration_fields(self):
@@ -314,3 +346,16 @@ class View(tk.Tk):
 
         """
         self.__status_bar['text'] = status
+
+    @property
+    def alpha(self):
+        """ Returns the alpha of the selector.
+
+        Returns:
+
+        """
+        alpha = 0
+        if self.__alpha is not None:
+            alpha = float(self.__alpha.get()) / 100
+
+        return alpha
