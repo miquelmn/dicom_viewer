@@ -123,9 +123,9 @@ class Controller:
                                   Obrir_fitxer=lambda: self.__open_file(gui.ImageContID.principal),
                                   Obrir_carpeta=lambda: self.__open_file(gui.ImageContID.principal,
                                                                          False),
-                                  Swap_viewers=self.swap_viewers, Capceleres=self.show_headers,
-                                  Historial=self.show_history, Watershed=self.watershed,
-                                  Corregister=self.start_registration)
+                                  Rota_90=self.rotate, Swap_viewers=self.swap_viewers,
+                                  Capceleres=self.show_headers, Historial=self.show_history,
+                                  Watershed=self.watershed, Corregister=self.start_registration)
 
         self.__position_first = None
 
@@ -138,6 +138,17 @@ class Controller:
         self.__flag_watershed = False
         self.__markers = []
         self.__mask = None
+
+    def rotate(self):
+        """ Rotate the image 90 degrees.
+
+        The whole 3D image is rotated 90 degrees from the center of the third dimension.
+
+        Returns:
+
+        """
+        self.__img_reference.rotate()
+        self.update_view_image()
 
     def update_status(self, status: str):
         """ Update status bar.
@@ -281,8 +292,8 @@ class Controller:
 
         """
         if self.__mask is not None:
-            res = messagebox.askokcancel("Title",
-                                         "Aquesta acció eliminara la segementació existent")
+            res = messagebox.askokcancel("Alerta",
+                                         "Aquesta acció eliminarà la segementació existent")
             if not res:
                 return
             self.__mask = None
@@ -336,12 +347,11 @@ class Controller:
 
     @exist_model
     @save_actions
-    def change_dim(self, value, img_container: gui.ImageContID = gui.ImageContID.principal):
+    def change_dim(self, value):
         """ Change the 3D point of view of the visualization.
 
         Args:
             value:
-            img_container:
 
         Returns:
 
@@ -354,13 +364,15 @@ class Controller:
         elif value == "Third":
             dim = 2
 
-        if img_container is gui.ImageContID.secondary:
-            image = self.__img_input
-        else:
-            image = self.__img_reference
+        depth_1 = depth_2 = 1
+        if self.__img_reference is not None and dim < len(self.__img_reference.shape):
+            self.__img_reference.dim = dim
+            depth_1 = len(self.__img_reference) - 1
+        if self.__img_input is not None and dim < len(self.__img_input.shape):
+            self.__img_input.dim = dim
+            depth_2 = len(self.__img_input) - 1
 
-        image.dim = dim
-        self.__view.set_max_depth(len(self.__img_reference) - 1, img_container)
+        self.__view.set_max_depth(max(depth_1, depth_2), gui.ImageContID.principal)
         self.update_view_image()
 
     @exist_model

@@ -10,6 +10,7 @@ Classes:
 """
 
 import tkinter as tk
+from tkinter import ttk
 from enum import Enum
 import numpy as np
 from viewer.view.image import imageContainer
@@ -122,6 +123,8 @@ class View(tk.Tk):
         for name, func in functions.items():
             name = name.replace("_", " ")
             buttons.append(tk.Button(fr_buttons, text=name, command=func))
+
+        buttons.append(ttk.Separator(fr_buttons, orient='horizontal'))
 
         for values, func in self.__func_selectors:
             variable = tk.StringVar(fr_buttons)

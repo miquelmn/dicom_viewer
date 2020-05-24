@@ -16,6 +16,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from pydicom.filereader import dcmread
 import SimpleITK as sItk
+from skimage import transform
 from . import segmentation, texture_features
 
 Num = Union[int, float]
@@ -81,8 +82,7 @@ class DicomFolder:
     """
 
     def __init__(self, path: str):
-        self.__headers = {}
-        self.__tensor = np.zeros((0, 0))
+        self.__dicom_file = {}
 
         self.__load_folder(path)
 
@@ -105,9 +105,9 @@ class DicomFolder:
         tensor = [cut.pixel_array for cut in dicoms]
 
         if tensor:
+            self.__dicom_file = dicoms[0]
             tensor = np.dstack(tensor)
-            self.__headers = dicoms[0]
-            self.__tensor = tensor
+            self.__tensor = np.moveaxis(tensor, -1, 0)
 
     @property
     def pixel_array(self) -> np.ndarray:
@@ -126,7 +126,7 @@ class DicomFolder:
         Returns:
 
         """
-        return self.__headers.items()
+        return self.__dicom_file.items()
 
 
 class DicomImage:
@@ -143,6 +143,8 @@ class DicomImage:
             self.__dicom_file = DicomFolder(path)
         else:
             self.__dicom_file = dcmread(path)
+            self.__tensor = self.__dicom_file.pixel_array
+        self.__tensor = self.__dicom_file.pixel_array
         self.__zoom_factor = 1
         self.__position = [0, 0]
 
@@ -177,7 +179,19 @@ class DicomImage:
 
         return mask
 
+    def rotate(self, degrees=90):
+        """ Rotates the 3D image
 
+        Args:
+            degrees:
+
+        Returns:
+
+        """
+        images = self.images
+        images = transform.rotate(images, angle=degrees)
+
+        self.__tensor = images
 
     # def get_texture_features(self, regions: np.ndarray, item: int):
     #     """ Gets texture features of the image item.
@@ -209,7 +223,7 @@ class DicomImage:
         """
         if self.__registered is not None:
             return self.__registered
-        return self.__dicom_file.pixel_array
+        return self.__tensor
 
     @property
     def dim(self) -> Num:
